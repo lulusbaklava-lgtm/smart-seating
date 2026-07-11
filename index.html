@@ -1,0 +1,2256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>班主任智能排座</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#4F46E5',
+            brandDeep: '#4338CA',
+            pro: '#7C3AED',
+            danger: '#EF4444',
+            ink: '#111827',
+            muted: '#4B5563',
+            soft: '#9CA3AF',
+            page: '#F9FAFB'
+          },
+          boxShadow: {
+            card: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            lift: '0 14px 30px -14px rgba(79, 70, 229, 0.45)'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --brand-gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #F9FAFB;
+      color: #111827;
+    }
+
+    button,
+    input,
+    textarea,
+    select,
+    .card,
+    .seat,
+    .desk {
+      transition: all 200ms ease-out;
+    }
+
+    button:hover,
+    .card:hover {
+      transform: translateY(-2px);
+    }
+
+    .brand-gradient {
+      background: var(--brand-gradient);
+    }
+
+    .seat-grid-bg {
+      background-color: #F9FAFB;
+      background-image:
+        linear-gradient(rgba(148, 163, 184, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.045) 1px, transparent 1px);
+      background-size: 36px 36px;
+    }
+
+    .seat {
+      min-height: 52px;
+      border: 1px solid #E9EDF3;
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .seat:hover {
+      border-color: #4F46E5;
+      box-shadow: 0 8px 20px -16px rgba(79, 70, 229, 0.9);
+    }
+
+    .student-chip {
+      cursor: grab;
+      user-select: none;
+      box-shadow: none;
+    }
+
+    .student-chip.gender-male {
+      background: #EFF6FF;
+      color: #1E3A8A;
+    }
+
+    .student-chip.gender-female {
+      background: #FDF2F8;
+      color: #9D174D;
+    }
+
+    .student-chip.conflict-unresolved {
+      outline: 2px solid #EF4444;
+      outline-offset: 2px;
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+    }
+
+    .student-chip.talkative-warning {
+      outline: 2px solid #F59E0B;
+      outline-offset: 2px;
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.14);
+    }
+
+    .student-chip.conflict-unresolved.talkative-warning {
+      outline-color: #EF4444;
+      box-shadow:
+        0 0 0 4px rgba(239, 68, 68, 0.12),
+        inset 0 -4px 0 rgba(245, 158, 11, 0.32);
+    }
+
+    .student-chip:active {
+      cursor: grabbing;
+    }
+
+    .export-mode .export-hide,
+    .export-mode .student-meta {
+      display: none !important;
+    }
+
+    .export-mode .student-chip {
+      display: flex !important;
+      min-height: 44px;
+      height: 100%;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 !important;
+      line-height: 1.2 !important;
+      outline: none !important;
+      box-shadow: none !important;
+      position: relative !important;
+    }
+
+    .export-mode .student-chip > span:first-child {
+      display: flex;
+      position: absolute;
+      inset: 0;
+      height: auto;
+      align-items: center;
+      justify-content: center;
+      transform: translateY(-3px);
+    }
+
+    .export-mode .seat {
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 !important;
+    }
+
+    .export-only {
+      display: none;
+    }
+
+    .export-mode .export-only {
+      display: block;
+    }
+
+    .sortable-ghost {
+      opacity: 0.42;
+      transform: scale(0.96);
+    }
+
+    .sortable-chosen,
+    .sortable-drag {
+      transform: scale(1.04);
+      box-shadow: 0 18px 30px -14px rgba(79, 70, 229, 0.72);
+    }
+
+    .modal-backdrop {
+      background: rgba(17, 24, 39, 0.36);
+      backdrop-filter: blur(10px);
+    }
+
+    .checkmark {
+      stroke-dasharray: 42;
+      stroke-dashoffset: 42;
+      animation: drawCheck 520ms ease-out forwards;
+    }
+
+    @keyframes drawCheck {
+      to { stroke-dashoffset: 0; }
+    }
+
+    .toast-in {
+      animation: toastIn 260ms ease-out both;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 900px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        width: 100%;
+        max-height: none;
+        position: relative;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen overflow-x-hidden">
+  <header class="brand-gradient sticky top-0 z-30 h-16 shadow-sm">
+    <div class="mx-auto flex h-full max-w-[1600px] items-center justify-between px-5">
+      <div class="flex items-center gap-3 text-white">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 shadow-sm ring-1 ring-white/20">
+          <span class="text-lg font-bold">智</span>
+        </div>
+        <div>
+          <h1 class="text-[24px] font-bold leading-8 tracking-normal">班主任智能排座</h1>
+          <p class="text-xs font-medium leading-4 text-white/72">班级座位表工具</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="planBadge" class="rounded-full bg-white/16 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-white/22">免费版</span>
+        <button id="topActivateBtn" class="rounded-xl bg-white px-4 py-2 text-sm font-semibold leading-5 text-brand shadow-sm hover:shadow-lift">激活专业版</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-shell mx-auto grid max-w-[1600px] grid-cols-[320px_minmax(0,1fr)] gap-5 p-5">
+    <aside class="sidebar sticky top-20 max-h-[calc(100vh-96px)] overflow-y-auto rounded-xl border border-gray-100 bg-white p-4 shadow-card">
+      <section class="card rounded-xl bg-white">
+        <div class="mb-3 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-brand">1</span>
+            <h2 class="text-[18px] font-semibold leading-6 text-ink">导入学生</h2>
+          </div>
+          <span id="studentCount" class="text-xs font-medium leading-4 text-soft">0 人</span>
+        </div>
+        <p class="mb-2 text-xs font-medium leading-4 text-soft">粘贴名单后直接生成座位，也可以用 Excel 导入。</p>
+        <textarea id="nameInput" class="min-h-32 w-full resize-y rounded-xl border border-gray-200 bg-page px-3 py-3 text-sm leading-5 text-ink outline-none placeholder:text-soft focus:border-brand focus:bg-white focus:ring-4 focus:ring-indigo-100" placeholder="每行一个姓名，也可以用逗号、顿号或空格分隔"></textarea>
+        <div class="mt-3">
+          <label class="flex cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold leading-5 text-muted hover:border-brand hover:text-brand hover:shadow-lift">
+            上传 Excel
+            <input id="excelInput" type="file" accept=".xlsx,.xls,.csv" class="hidden" />
+          </label>
+        </div>
+        <button id="downloadRosterTemplateBtn" class="mt-2 w-full rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm font-semibold leading-5 text-brand hover:bg-white hover:shadow-lift">下载名单模板</button>
+        <p id="templateHint" class="mt-2 text-xs font-medium leading-4 text-soft">免费模板只包含姓名列，适合快速导入。</p>
+      </section>
+
+      <section class="card mt-5 rounded-xl border-t border-gray-100 pt-5">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-brand">2</span>
+          <h2 class="text-[18px] font-semibold leading-6 text-ink">设置座位</h2>
+        </div>
+        <label class="text-xs font-medium leading-4 text-soft">桌型模式</label>
+        <select id="deskMode" class="mt-1 w-full rounded-xl border border-gray-200 bg-page px-3 py-2 text-sm leading-5 text-ink outline-none focus:border-brand focus:bg-white focus:ring-4 focus:ring-indigo-100">
+          <option value="single">单人桌</option>
+          <option value="double">双人桌（左右并排）</option>
+          <option value="triple-row">三人桌（横排）</option>
+          <option value="custom">自定义混合桌型</option>
+        </select>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <label class="text-xs font-medium leading-4 text-soft">
+            行数
+            <input id="rowInput" type="number" min="1" max="12" value="6" class="mt-1 w-full rounded-xl border border-gray-200 bg-page px-3 py-2 text-sm leading-5 text-ink outline-none focus:border-brand focus:bg-white focus:ring-4 focus:ring-indigo-100" />
+          </label>
+          <label class="text-xs font-medium leading-4 text-soft">
+            列数
+            <input id="colInput" type="number" min="1" max="12" value="6" class="mt-1 w-full rounded-xl border border-gray-200 bg-page px-3 py-2 text-sm leading-5 text-ink outline-none focus:border-brand focus:bg-white focus:ring-4 focus:ring-indigo-100" />
+          </label>
+        </div>
+        <button id="generateBtn" class="mt-3 w-full rounded-xl bg-brand px-3 py-2 text-sm font-semibold leading-5 text-white shadow-sm hover:bg-brandDeep hover:shadow-lift">生成座位</button>
+        <p class="mt-2 text-xs font-medium leading-4 text-soft">生成后可在右侧座位表上方合并或分离列，形成过道。</p>
+      </section>
+
+      <section class="card mt-5 rounded-xl border-t border-gray-100 pt-5">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-brand">3</span>
+          <h2 class="text-[18px] font-semibold leading-6 text-ink">智能排座</h2>
+        </div>
+        <p class="mb-3 text-xs font-medium leading-4 text-soft">上传专业模板后，先选择本次排座目标；性别搭配可作为附加规则单独开启。</p>
+        <p class="mb-2 text-xs font-bold leading-4 text-muted">排座模式</p>
+        <div class="grid gap-2">
+          <label class="smart-rule flex cursor-pointer items-center gap-3 rounded-xl border border-gray-100 bg-page px-3 py-2.5 text-sm font-semibold leading-5 text-muted transition hover:border-indigo-100 hover:bg-white">
+            <input type="radio" name="smartGoal" value="front" data-rule="goal" class="smart-rule-input h-4 w-4 border-gray-300 text-brand focus:ring-brand" checked />
+            <span>优先前排 <span class="font-medium text-soft">视力弱、个子矮优先靠前</span></span>
+          </label>
+          <label class="smart-rule flex cursor-pointer items-center gap-3 rounded-xl border border-gray-100 bg-page px-3 py-2.5 text-sm font-semibold leading-5 text-muted transition hover:border-indigo-100 hover:bg-white">
+            <input type="radio" name="smartGoal" value="score" data-rule="goal" class="smart-rule-input h-4 w-4 border-gray-300 text-brand focus:ring-brand" />
+            <span>成绩互助 <span class="font-medium text-soft">优差搭配，避免集中</span></span>
+          </label>
+          <label class="smart-rule flex cursor-pointer items-center gap-3 rounded-xl border border-gray-100 bg-page px-3 py-2.5 text-sm font-semibold leading-5 text-muted transition hover:border-indigo-100 hover:bg-white">
+            <input type="radio" name="smartGoal" value="rank" data-rule="goal" class="smart-rule-input h-4 w-4 border-gray-300 text-brand focus:ring-brand" />
+            <span>成绩排序 <span class="font-medium text-soft">按名次由高到低排座</span></span>
+          </label>
+        </div>
+        <div class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2.5 text-xs font-medium leading-5 text-muted">
+          底线规则：避开冲突名单。优化规则：分散爱讲话学生，并尽量保留同桌偏好。
+        </div>
+        <p class="mb-2 mt-4 text-xs font-bold leading-4 text-muted">性别搭配</p>
+        <div class="grid gap-2">
+          <label class="smart-rule flex cursor-pointer items-center gap-3 rounded-xl border border-gray-100 bg-page px-3 py-2.5 text-sm font-semibold leading-5 text-muted transition hover:border-indigo-100 hover:bg-white">
+            <input type="radio" name="smartGenderMode" value="none" data-rule="genderMode" class="smart-rule-input h-4 w-4 border-gray-300 text-brand focus:ring-brand" checked />
+            <span>不限制 <span class="font-medium text-soft">按排座目标自然生成</span></span>
+          </label>
+          <label class="smart-rule flex cursor-pointer items-center gap-3 rounded-xl border border-gray-100 bg-page px-3 py-2.5 text-sm font-semibold leading-5 text-muted transition hover:border-indigo-100 hover:bg-white">
+            <input type="radio" name="smartGenderMode" value="mixed" data-rule="genderMode" class="smart-rule-input h-4 w-4 border-gray-300 text-brand focus:ring-brand" />
+            <span>男女搭配 <span class="font-medium text-soft">优先安排男女同桌</span></span>
+          </label>
+          <label class="smart-rule flex cursor-pointer items-center gap-3 rounded-xl border border-gray-100 bg-page px-3 py-2.5 text-sm font-semibold leading-5 text-muted transition hover:border-indigo-100 hover:bg-white">
+            <input type="radio" name="smartGenderMode" value="same" data-rule="genderMode" class="smart-rule-input h-4 w-4 border-gray-300 text-brand focus:ring-brand" />
+            <span>同性搭配 <span class="font-medium text-soft">优先安排同性同桌</span></span>
+          </label>
+        </div>
+        <div id="genderPositionOptions" class="mt-2 hidden rounded-xl border border-indigo-100 bg-indigo-50 p-2">
+          <p class="mb-2 px-1 text-xs font-bold leading-4 text-muted">男女位置</p>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="smart-rule flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-white/70 bg-white px-2 py-2 text-xs font-semibold leading-4 text-muted transition hover:border-brand hover:text-brand">
+              <input type="radio" name="smartGenderPosition" value="none" data-rule="genderPosition" class="smart-rule-input h-4 w-4 border-gray-300 text-brand focus:ring-brand" checked />
+              <span>不限制</span>
+            </label>
+            <label class="smart-rule flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-white/70 bg-white px-2 py-2 text-xs font-semibold leading-4 text-muted transition hover:border-brand hover:text-brand">
+              <input type="radio" name="smartGenderPosition" value="male-left" data-rule="genderPosition" class="smart-rule-input h-4 w-4 border-gray-300 text-brand focus:ring-brand" />
+              <span>男左女右</span>
+            </label>
+            <label class="smart-rule flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-white/70 bg-white px-2 py-2 text-xs font-semibold leading-4 text-muted transition hover:border-brand hover:text-brand">
+              <input type="radio" name="smartGenderPosition" value="female-left" data-rule="genderPosition" class="smart-rule-input h-4 w-4 border-gray-300 text-brand focus:ring-brand" />
+              <span>女左男右</span>
+            </label>
+          </div>
+        </div>
+        <label class="mt-3 flex cursor-pointer items-center justify-between rounded-xl border border-gray-100 bg-page px-3 py-2 text-xs font-semibold leading-4 text-muted">
+          <span>显示学生基础信息</span>
+          <input id="debugInfoToggle" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand" />
+        </label>
+        <button id="smartSeatBtn" class="pro-action mt-3 w-full rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-semibold leading-5 text-soft hover:shadow-lift">🔒 智能排座</button>
+      </section>
+
+      <section class="card mt-5 rounded-xl border-t border-gray-100 pt-5">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-brand">4</span>
+          <h2 class="text-[18px] font-semibold leading-6 text-ink">调整与导出</h2>
+        </div>
+        <p class="mb-3 text-xs font-medium leading-4 text-soft">手动拖拽微调；专业版可整排轮换、整列左移和高清导出。</p>
+        <div class="grid gap-2">
+          <div class="grid grid-cols-2 gap-2">
+            <button id="rotateRowsBtn" title="每一整排向讲台方向移动一排，最前排回到最后排" class="pro-action rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-semibold leading-5 text-soft hover:shadow-lift">🔒 整排轮换</button>
+            <button id="shiftColumnsLeftBtn" title="每一排座位整体向左移动一列，最左侧回到最右侧" class="pro-action rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-semibold leading-5 text-soft hover:shadow-lift">🔒 整列左移</button>
+          </div>
+          <button id="exportBtn" class="rounded-xl bg-ink px-3 py-2 text-sm font-semibold leading-5 text-white shadow-sm hover:shadow-lift">导出图片</button>
+          <button id="clearBtn" class="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-semibold leading-5 text-danger hover:shadow-lift">清空本地数据</button>
+        </div>
+      </section>
+
+    </aside>
+
+    <section class="min-w-0">
+      <div id="exportArea" class="rounded-xl bg-white p-4 shadow-card">
+        <div class="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <h3 class="export-hide text-[18px] font-semibold leading-6 text-ink">班级座位表</h3>
+            <p id="canvasMeta" class="export-hide text-xs font-medium leading-4 text-soft">6 行 × 6 列，共 36 个座位</p>
+          </div>
+          <h3 id="exportPrintTitle" class="export-only w-full text-center text-[22px] font-bold leading-8 text-ink">班级座位表</h3>
+          <span id="exportBadge" class="export-hide rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium leading-4 text-brand">智排座</span>
+        </div>
+        <div id="conflictNotice" class="export-hide hidden"></div>
+        <div id="seatCanvas" class="seat-grid-bg min-h-[420px] overflow-auto rounded-xl border border-gray-100 p-4"></div>
+        <div id="podiumBar" class="mt-2 flex h-10 items-center justify-center rounded-xl bg-gradient-to-r from-amber-50 to-orange-100 px-4 text-center text-sm font-bold leading-none text-amber-800"><span>讲台 / 前排方向</span></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="floatingHelp" class="fixed right-0 top-1/2 z-40 -translate-y-1/2">
+    <div class="group relative flex items-center justify-end">
+      <div class="brand-gradient rounded-l-xl px-3 py-5 text-xs font-bold leading-4 text-white shadow-2xl ring-1 ring-white/30 [writing-mode:vertical-rl]">使用帮助</div>
+      <div class="pointer-events-none absolute right-full top-1/2 mr-3 w-[560px] -translate-y-1/2 opacity-0 transition duration-200 ease-out group-hover:pointer-events-auto group-hover:opacity-100">
+        <div class="overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-2xl ring-4 ring-indigo-100/70">
+          <div class="brand-gradient px-5 py-4 text-white">
+            <p class="text-base font-bold leading-6">联系客服</p>
+            <p class="mt-1 text-xs font-medium leading-4 text-white/80">激活码、设备绑定、模板导入或排座异常，都可以扫码处理。</p>
+          </div>
+          <div class="grid grid-cols-[220px_minmax(0,1fr)] gap-5 p-5">
+            <div id="floatingContactQrBox" class="flex h-[220px] w-[220px] shrink-0 items-center justify-center rounded-xl border border-dashed border-indigo-200 bg-page text-xs font-medium leading-4 text-soft">微信二维码</div>
+            <div class="min-w-0">
+              <p class="text-sm font-bold leading-5 text-ink">添加后请备注：排座工具</p>
+              <div class="mt-2 grid gap-2 text-xs font-medium leading-5 text-muted">
+                <p class="rounded-lg bg-page px-3 py-2">1. 购买或激活兑换码</p>
+                <p class="rounded-lg bg-page px-3 py-2">2. 处理设备绑定名额</p>
+                <p class="rounded-lg bg-page px-3 py-2">3. 协助检查模板和排座结果</p>
+              </div>
+              <p id="floatingContactWechatText" class="mt-3 rounded-lg bg-indigo-50 px-3 py-2 text-sm font-semibold leading-5 text-brand">微信号：请在代码中填写</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="activateModal" class="modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="w-full max-w-4xl rounded-xl bg-white p-6 shadow-2xl">
+      <div class="mb-4 flex items-start justify-between">
+        <div>
+          <h2 class="text-[24px] font-bold leading-8 text-ink">激活专业版</h2>
+          <p class="mt-1 text-sm leading-5 text-muted">专业版适合需要规则排座、轮换和无水印导出的班级场景。</p>
+        </div>
+        <button class="close-modal rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-muted hover:text-ink" data-modal="activateModal">关闭</button>
+      </div>
+      <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_320px]">
+        <div class="overflow-hidden rounded-xl border border-gray-100">
+          <div class="grid grid-cols-[1.05fr_1fr_1fr] bg-page text-xs font-bold leading-4 text-soft">
+            <div class="px-4 py-3">功能</div>
+            <div class="px-4 py-3 text-center">免费版</div>
+            <div class="brand-gradient px-4 py-3 text-center text-white">专业版</div>
+          </div>
+          <div class="divide-y divide-gray-100 text-sm leading-5">
+            <div class="grid grid-cols-[1.05fr_1fr_1fr] items-center">
+              <div class="px-4 py-3 font-semibold text-ink">Excel 模板</div>
+              <div class="px-4 py-3 text-center text-muted">仅姓名导入</div>
+              <div class="bg-indigo-50 px-4 py-3 text-center font-semibold text-brand">身高、视力、性别、偏好</div>
+            </div>
+            <div class="grid grid-cols-[1.05fr_1fr_1fr] items-center">
+              <div class="px-4 py-3 font-semibold text-ink">排座方式</div>
+              <div class="px-4 py-3 text-center text-muted">手动拖拽</div>
+              <div class="bg-indigo-50 px-4 py-3 text-center font-semibold text-brand">云端智能排座</div>
+            </div>
+            <div class="grid grid-cols-[1.05fr_1fr_1fr] items-center">
+              <div class="px-4 py-3 font-semibold text-ink">座位轮换</div>
+              <div class="px-4 py-3 text-center text-soft">不可用</div>
+              <div class="bg-indigo-50 px-4 py-3 text-center font-semibold text-brand">整排轮换</div>
+            </div>
+            <div class="grid grid-cols-[1.05fr_1fr_1fr] items-center">
+              <div class="px-4 py-3 font-semibold text-ink">图片导出</div>
+              <div class="px-4 py-3 text-center text-muted">普通图，带水印</div>
+              <div class="bg-indigo-50 px-4 py-3 text-center font-semibold text-brand">高清图，无水印</div>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-xl border border-indigo-100 bg-gradient-to-b from-indigo-50 to-white p-4 text-center">
+          <p class="text-sm font-bold leading-5 text-ink">扫码添加客服</p>
+          <div id="contactQrBox" class="mx-auto mt-3 flex h-60 w-60 items-center justify-center rounded-xl border border-dashed border-indigo-200 bg-white text-xs font-medium leading-4 text-soft shadow-sm">
+            <span>微信二维码</span>
+          </div>
+          <p class="mt-3 text-xs font-medium leading-4 text-muted">添加时备注“排座工具”，并说明你遇到的问题。</p>
+          <p id="contactWechatText" class="mt-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold leading-4 text-brand shadow-sm">微信号：请在代码中填写</p>
+          <p class="mt-2 text-[11px] font-medium leading-4 text-soft">每个激活码最多可绑定 3 台设备。</p>
+        </div>
+      </div>
+      <div class="mt-4 grid gap-3 md:grid-cols-[0.9fr_1.1fr_auto]">
+        <input id="modalUserInput" type="text" class="w-full rounded-xl border border-gray-200 bg-page px-4 py-3 text-sm leading-5 text-ink outline-none placeholder:text-soft focus:border-brand focus:bg-white focus:ring-4 focus:ring-indigo-100" placeholder="手机号或邮箱，用于绑定设备" />
+        <input id="modalCodeInput" type="text" class="w-full rounded-xl border border-gray-200 bg-page px-4 py-3 text-sm uppercase leading-5 text-ink outline-none placeholder:text-soft focus:border-brand focus:bg-white focus:ring-4 focus:ring-indigo-100" placeholder="输入兑换码，例如 PRO-8X92-A1B3" />
+        <button id="modalActivateBtn" class="brand-gradient flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold leading-5 text-white shadow-sm hover:shadow-lift">
+          <span>立即激活</span>
+          <svg id="successIcon" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none">
+            <path class="checkmark" d="M5 12.5l4.4 4.2L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </div>
+      <p class="mt-3 text-xs font-medium leading-4 text-soft">一个兑换码最多可绑定 3 台设备；同一设备重复激活不会重复占用名额。</p>
+    </div>
+  </div>
+
+      <div id="smartModal" class="modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl">
+      <div class="mb-5 flex items-start justify-between">
+        <div>
+          <h2 class="text-[24px] font-bold leading-8 text-ink">智能排座</h2>
+          <p class="mt-1 text-sm leading-5 text-muted">上传专业版模板后，云端算法会按班级约束自动生成更均衡的座位表。</p>
+        </div>
+        <button class="close-modal rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-muted hover:text-ink" data-modal="smartModal">关闭</button>
+      </div>
+      <div class="grid gap-3 md:grid-cols-3">
+        <div class="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+          <p class="text-xs font-medium leading-4 text-brand">照顾视线</p>
+          <p class="mt-1 text-sm leading-5 text-muted">近视、视力较弱或身高较矮的学生优先安排在更靠前、更清晰的位置。</p>
+        </div>
+        <div class="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+          <p class="text-xs font-medium leading-4 text-brand">减少干扰</p>
+          <p class="mt-1 text-sm leading-5 text-muted">自动分散爱讲话学生，避开不适合同桌或邻座的冲突名单。</p>
+        </div>
+        <div class="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+          <p class="text-xs font-medium leading-4 text-brand">保留偏好</p>
+          <p class="mt-1 text-sm leading-5 text-muted">在不破坏整体规则的前提下，尽量满足希望同桌、性别均衡等安排。</p>
+        </div>
+      </div>
+      <div class="mt-3 rounded-xl border border-gray-100 bg-page p-4">
+        <p class="text-sm font-semibold leading-5 text-ink">使用方式</p>
+        <p class="mt-1 text-sm leading-5 text-muted">下载模板，填写姓名、性别、身高、视力、是否近视、是否爱讲话、希望同桌、不想同桌，再上传生成座位。真正的排序算法在云端运行，前端只展示结果。</p>
+      </div>
+      <div class="mt-3 grid gap-2 rounded-xl border border-gray-100 bg-white p-4 text-sm leading-5 text-muted">
+        <p class="font-semibold text-ink">可启用的排座规则</p>
+        <div class="grid gap-2 md:grid-cols-2">
+          <span class="rounded-lg bg-page px-3 py-2">身高：矮个优先靠前，高个自然后移</span>
+          <span class="rounded-lg bg-page px-3 py-2">视力：视力弱或近视优先靠前</span>
+          <span class="rounded-lg bg-page px-3 py-2">性别：支持男女同桌或同性同桌</span>
+          <span class="rounded-lg bg-page px-3 py-2">名次：优先级互补，避免强弱过度集中</span>
+        </div>
+      </div>
+      <div class="mt-3 rounded-xl border border-gray-100 bg-white p-4">
+        <div class="mb-3 flex items-center justify-between">
+          <p class="text-sm font-semibold leading-5 text-ink">生成效果示例</p>
+          <span class="rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium leading-4 text-brand">专业版</span>
+        </div>
+        <div class="grid grid-cols-4 gap-2 text-center text-xs font-medium leading-4">
+          <div class="rounded-lg border border-emerald-100 bg-emerald-50 p-2 text-emerald-700">近视<br>前排</div>
+          <div class="rounded-lg border border-indigo-100 bg-indigo-50 p-2 text-brand">矮个<br>前排</div>
+          <div class="rounded-lg border border-gray-100 bg-page p-2 text-muted">安静<br>同桌</div>
+          <div class="rounded-lg border border-gray-100 bg-page p-2 text-muted">高个<br>后排</div>
+          <div class="rounded-lg border border-red-100 bg-red-50 p-2 text-danger">冲突<br>避开</div>
+          <div class="rounded-lg border border-gray-100 bg-page p-2 text-muted">均衡<br>性别</div>
+          <div class="rounded-lg border border-amber-100 bg-amber-50 p-2 text-amber-700">爱讲话<br>分散</div>
+          <div class="rounded-lg border border-gray-100 bg-page p-2 text-muted">偏好<br>保留</div>
+        </div>
+      </div>
+      <div class="mt-4 grid grid-cols-2 gap-3">
+        <button id="downloadTemplateBtn" class="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold leading-5 text-muted hover:border-brand hover:text-brand hover:shadow-lift">下载模板</button>
+        <label class="flex cursor-pointer items-center justify-center rounded-xl bg-brand px-4 py-3 text-sm font-semibold leading-5 text-white shadow-sm hover:bg-brandDeep hover:shadow-lift">
+          上传模板
+          <input id="smartUploadInput" type="file" accept=".xlsx,.xls,.csv" class="hidden" />
+        </label>
+      </div>
+      <button id="smartActivateBtn" class="mt-3 w-full rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm font-semibold leading-5 text-brand hover:bg-white hover:shadow-lift">激活后使用云端智能排座</button>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-5 left-1/2 z-[60] hidden -translate-x-1/2 rounded-xl bg-ink px-4 py-3 text-sm font-semibold leading-5 text-white shadow-2xl"></div>
+
+  <script>
+    // Supabase 配置位：上线前替换成你自己的项目参数。
+    const SUPABASE_URL = 'https://awzjrlvqwlprrqrfybfi.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3empybHZxd2xwcnJxcmZ5YmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MzI2MDMsImV4cCI6MjA5OTMwODYwM30.Jy9jFdvMMM0PKx2XIOBcT7o3SPkVJRT7nDmhxKAjl78';
+    const SMART_SEATING_FUNCTION_URL = 'https://awzjrlvqwlprrqrfybfi.supabase.co/functions/v1/smart-seating';
+    // 激活接口建议由 Supabase Edge Function 实现：
+    // 1. 校验兑换码是否有效；2. 按 account + client_id 绑定设备；
+    // 3. 同一兑换码最多绑定 MAX_BOUND_DEVICES 台设备；4. 老设备重复激活允许通过。
+    const ACTIVATION_FUNCTION_URL = 'https://awzjrlvqwlprrqrfybfi.supabase.co/functions/v1/activate-code';
+    const MAX_BOUND_DEVICES = 3;
+    // 售后联系方式配置接口：建议由 Edge Function 返回 { wechat_id, qr_image_url }，方便后台更新。
+    const CONTACT_CONFIG_FUNCTION_URL = 'https://awzjrlvqwlprrqrfybfi.supabase.co/functions/v1/contact-config';
+    const CONTACT_WECHAT_ID = '请填写你的微信号';
+    const CONTACT_QR_IMAGE_URL = '';
+
+    const storageKey = 'smart-seating-state-v1';
+    const proKey = 'smart-seating-pro-v1';
+    const deviceKey = 'smart-seating-device-id-v1';
+    const defaultState = {
+      students: [],
+      rows: 6,
+      cols: 6,
+      deskMode: 'single',
+      customLayout: '单 双 双\n双 单 双\n单 单 双',
+      studentDetails: {},
+      smartTemplateStudents: [],
+      unresolvedConflicts: [],
+      smartRules: {
+        goal: 'front',
+        genderMode: 'none',
+        genderPosition: 'none'
+      },
+      showDebugInfo: false,
+      seats: Array(36).fill('')
+    };
+
+    let appState = loadState();
+    let sortableInstances = [];
+    let unresolvedConflictNames = new Set();
+    let talkativeWarningNames = new Set();
+    let contactConfig = {
+      wechatId: CONTACT_WECHAT_ID,
+      qrImageUrl: CONTACT_QR_IMAGE_URL
+    };
+
+    const dom = {
+      nameInput: document.getElementById('nameInput'),
+      studentCount: document.getElementById('studentCount'),
+      excelInput: document.getElementById('excelInput'),
+      downloadRosterTemplateBtn: document.getElementById('downloadRosterTemplateBtn'),
+      templateHint: document.getElementById('templateHint'),
+      deskMode: document.getElementById('deskMode'),
+      rowInput: document.getElementById('rowInput'),
+      colInput: document.getElementById('colInput'),
+      generateBtn: document.getElementById('generateBtn'),
+      seatCanvas: document.getElementById('seatCanvas'),
+      canvasMeta: document.getElementById('canvasMeta'),
+      conflictNotice: document.getElementById('conflictNotice'),
+      planBadge: document.getElementById('planBadge'),
+      exportBadge: document.getElementById('exportBadge'),
+      topActivateBtn: document.getElementById('topActivateBtn'),
+      modalUserInput: document.getElementById('modalUserInput'),
+      modalCodeInput: document.getElementById('modalCodeInput'),
+      modalActivateBtn: document.getElementById('modalActivateBtn'),
+      activateModal: document.getElementById('activateModal'),
+      smartModal: document.getElementById('smartModal'),
+      successIcon: document.getElementById('successIcon'),
+      smartSeatBtn: document.getElementById('smartSeatBtn'),
+      rotateRowsBtn: document.getElementById('rotateRowsBtn'),
+      shiftColumnsLeftBtn: document.getElementById('shiftColumnsLeftBtn'),
+      exportBtn: document.getElementById('exportBtn'),
+      clearBtn: document.getElementById('clearBtn'),
+      exportArea: document.getElementById('exportArea'),
+      exportPrintTitle: document.getElementById('exportPrintTitle'),
+      downloadTemplateBtn: document.getElementById('downloadTemplateBtn'),
+      smartActivateBtn: document.getElementById('smartActivateBtn'),
+      smartUploadInput: document.getElementById('smartUploadInput'),
+      smartRuleInputs: [...document.querySelectorAll('.smart-rule-input')],
+      genderPositionOptions: document.getElementById('genderPositionOptions'),
+      debugInfoToggle: document.getElementById('debugInfoToggle'),
+      contactQrBox: document.getElementById('contactQrBox'),
+      contactWechatText: document.getElementById('contactWechatText'),
+      floatingContactQrBox: document.getElementById('floatingContactQrBox'),
+      floatingContactWechatText: document.getElementById('floatingContactWechatText'),
+      toast: document.getElementById('toast')
+    };
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey));
+        if (!saved) return structuredClone(defaultState);
+        const rows = Number(saved.rows) || defaultState.rows;
+        const cols = Number(saved.cols) || defaultState.cols;
+        const required = rows * cols;
+        return {
+          ...defaultState,
+          ...saved,
+          rows,
+          cols,
+          smartRules: normalizeSmartRules(saved.smartRules),
+          seats: normalizeSeats(saved.seats || [], required)
+        };
+      } catch (error) {
+        return structuredClone(defaultState);
+      }
+    }
+
+    function normalizeSmartRules(savedRules = {}) {
+      const next = {
+        ...defaultState.smartRules,
+        ...(savedRules || {})
+      };
+
+      if (!savedRules.goal) {
+        if (savedRules.height && !savedRules.vision) next.goal = 'front';
+        if (savedRules.gender) next.goal = 'front';
+        if (savedRules.score) next.goal = 'score';
+      }
+
+      if (next.goal === 'height' || next.goal === 'balance' || next.goal === 'daily') next.goal = 'front';
+      if (!['front', 'score', 'rank'].includes(next.goal)) next.goal = 'front';
+      if (!['none', 'mixed', 'same'].includes(next.genderMode)) {
+        next.genderMode = savedRules.gender ? 'mixed' : 'none';
+      }
+      if (!['none', 'male-left', 'female-left'].includes(next.genderPosition)) next.genderPosition = 'none';
+      if (savedRules.score !== undefined && savedRules.score) next.goal = 'score';
+      return next;
+    }
+
+    function saveState() {
+      localStorage.setItem(storageKey, JSON.stringify(appState));
+    }
+
+    function updateGenderPositionVisibility() {
+      dom.genderPositionOptions.classList.toggle('hidden', appState.smartRules?.genderMode !== 'mixed');
+    }
+
+    function getProStatus() {
+      try {
+        const pro = JSON.parse(localStorage.getItem(proKey));
+        if (!pro || !pro.isPro) return { isPro: false };
+        if (pro.proExpiry && new Date(pro.proExpiry).getTime() < Date.now()) {
+          localStorage.removeItem(proKey);
+          return { isPro: false };
+        }
+        return pro;
+      } catch (error) {
+        return { isPro: false };
+      }
+    }
+
+    function getClientDeviceId() {
+      let deviceId = localStorage.getItem(deviceKey);
+      if (!deviceId) {
+        const browserCrypto = window.crypto || window.msCrypto;
+        const randomPart = browserCrypto?.randomUUID ? browserCrypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        deviceId = `device-${randomPart}`;
+        localStorage.setItem(deviceKey, deviceId);
+      }
+      return deviceId;
+    }
+
+    function setProStatus(days = 365, activation = {}) {
+      const expires = activation.expiresAt || activation.proExpiry
+        ? new Date(activation.expiresAt || activation.proExpiry)
+        : new Date();
+      if (!activation.expiresAt && !activation.proExpiry) expires.setDate(expires.getDate() + days);
+      localStorage.setItem(proKey, JSON.stringify({
+        isPro: true,
+        proExpiry: expires.toISOString(),
+        activationAccount: activation.account || '',
+        activationDeviceId: activation.deviceId || getClientDeviceId(),
+        maxDevices: activation.maxDevices || MAX_BOUND_DEVICES
+      }));
+    }
+
+    function updateContactInfo() {
+      const wechatText = `微信号：${contactConfig.wechatId || CONTACT_WECHAT_ID}`;
+      dom.contactWechatText.textContent = wechatText;
+      dom.floatingContactWechatText.textContent = wechatText;
+
+      const qrBoxes = [dom.contactQrBox, dom.floatingContactQrBox].filter(Boolean);
+      if (contactConfig.qrImageUrl) {
+        const qrImage = `<img src="${escapeHTML(contactConfig.qrImageUrl)}" alt="微信二维码" class="h-full w-full rounded-xl object-cover" />`;
+        qrBoxes.forEach(box => {
+          box.innerHTML = qrImage;
+          box.classList.remove('border-dashed');
+        });
+      } else {
+        qrBoxes.forEach(box => {
+          box.innerHTML = '<span>微信二维码</span>';
+          box.classList.add('border-dashed');
+        });
+      }
+    }
+
+    async function loadContactConfig() {
+      if (CONTACT_CONFIG_FUNCTION_URL.includes('YOUR_SUPABASE_EDGE_FUNCTION_URL')) return;
+      try {
+        const headers = SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_KEY')
+          ? {}
+          : {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+            };
+        const response = await fetch(CONTACT_CONFIG_FUNCTION_URL, { headers });
+        if (!response.ok) throw new Error('联系配置读取失败');
+        const config = await response.json();
+        contactConfig = {
+          wechatId: config.wechat_id || config.wechatId || contactConfig.wechatId,
+          qrImageUrl: config.qr_image_url || config.qrImageUrl || contactConfig.qrImageUrl
+        };
+        updateContactInfo();
+      } catch (error) {
+        console.warn(error);
+      }
+    }
+
+    function normalizeSeats(seats, size) {
+      const next = Array(size).fill('');
+      seats.slice(0, size).forEach((name, index) => {
+        next[index] = name || '';
+      });
+      return next;
+    }
+
+    function autoFitGridForStudents(count) {
+      if (!count) return;
+      let bestCols = Math.ceil(Math.sqrt(count));
+      let bestRows = Math.ceil(count / bestCols);
+      if (bestRows > bestCols) [bestRows, bestCols] = [bestCols, bestRows];
+      bestCols = Math.max(4, Math.min(12, bestCols));
+      bestRows = Math.max(3, Math.min(12, Math.ceil(count / bestCols)));
+      appState.rows = bestRows;
+      appState.cols = bestCols;
+      appState.seats = normalizeSeats(appState.seats, appState.rows * appState.cols)
+        .map(name => nextStudentSet.has(name) ? name : '');
+    }
+
+    function ensureCapacityNotice() {
+      const capacity = appState.rows * appState.cols;
+      if (appState.students.length > capacity) {
+        showToast(`学生 ${appState.students.length} 人，当前只有 ${capacity} 个座位`);
+        return false;
+      }
+      return true;
+    }
+
+    function parseNames(text) {
+      return [...new Set(
+        text
+          .split(/[\n,，、\s]+/)
+          .map(name => name.trim())
+          .filter(Boolean)
+      )];
+    }
+
+    function readWorkbook(file, callback) {
+      const reader = new FileReader();
+      reader.onload = event => {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        callback(rows);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function extractNamesFromRows(rows) {
+      if (!rows.length) return [];
+      const header = rows[0].map(cell => String(cell).trim());
+      const nameIndex = header.findIndex(cell => cell === '姓名' || cell.toLowerCase() === 'name');
+      const startRow = nameIndex >= 0 ? 1 : 0;
+      const column = nameIndex >= 0 ? nameIndex : 0;
+      return [...new Set(rows.slice(startRow).map(row => String(row[column] || '').trim()).filter(Boolean))];
+    }
+
+    function extractStudentDetailsFromRows(rows) {
+      if (!rows.length) return { names: [], details: {} };
+      const headers = rows[0].map(cell => String(cell).trim());
+      const hasHeader = headers.some(cell => ['姓名', 'name', '身高', '身高(cm)', '视力', '性别', '名次'].includes(cell));
+      const nameIndex = hasHeader ? headers.findIndex(cell => cell === '姓名' || cell.toLowerCase() === 'name') : 0;
+      const startRow = hasHeader ? 1 : 0;
+      const columnAliases = {
+        height: ['身高', '身高(cm)', '身高cm', 'height'],
+        vision: ['视力', 'vision'],
+        gender: ['性别', 'gender'],
+        rank: ['名次', '排名', 'rank']
+      };
+      const findColumn = aliases => headers.findIndex(cell => aliases.includes(cell) || aliases.includes(cell.toLowerCase()));
+      const columns = Object.fromEntries(Object.entries(columnAliases).map(([key, aliases]) => [key, hasHeader ? findColumn(aliases) : -1]));
+      const details = {};
+      const names = [];
+
+      rows.slice(startRow).forEach(row => {
+        const name = String(row[nameIndex] || '').trim();
+        if (!name || details[name]) return;
+        const raw = {};
+        if (hasHeader) {
+          headers.forEach((header, index) => {
+            if (header) raw[header] = row[index] || '';
+          });
+        }
+        names.push(name);
+        details[name] = {
+          ...raw,
+          '姓名': name,
+          name,
+          height: columns.height >= 0 ? cleanNumber(row[columns.height]) : null,
+          vision: columns.vision >= 0 ? cleanNumber(row[columns.vision]) : null,
+          gender: columns.gender >= 0 ? String(row[columns.gender] || '').trim() : '',
+          rank: columns.rank >= 0 ? cleanNumber(row[columns.rank]) : null
+        };
+      });
+
+      return { names, details };
+    }
+
+    function cleanNumber(value) {
+      const number = Number.parseFloat(value);
+      return Number.isFinite(number) ? number : null;
+    }
+
+    function extractObjectsFromRows(rows) {
+      if (!rows.length) return [];
+      const header = rows[0].map(cell => String(cell).trim());
+      return rows.slice(1).map(row => {
+        const item = {};
+        header.forEach((key, index) => {
+          if (key) item[key] = row[index] || '';
+        });
+        return item;
+      }).filter(item => item['姓名']);
+    }
+
+    function hasSmartTemplateColumns(rows) {
+      if (!rows.length) return false;
+      const headers = rows[0].map(cell => String(cell).trim().toLowerCase());
+      const hasName = headers.includes('姓名') || headers.includes('name');
+      const smartColumns = ['身高', '身高(cm)', '身高cm', 'height', '视力', 'vision', '性别', 'gender', '名次', '排名', 'rank', '是否近视', '是否爱讲话', '希望同桌', '不想同桌'];
+      return hasName && smartColumns.some(column => headers.includes(column.toLowerCase()));
+    }
+
+    function getSmartTemplatePayload() {
+      const templateStudents = appState.smartTemplateStudents || [];
+      if (!templateStudents.length) return [];
+      const currentNames = new Set(appState.students);
+      return templateStudents.filter(item => currentNames.has(item['姓名']));
+    }
+
+    function handleSmartSeatClick() {
+      if (!ensurePro()) return;
+      const payload = getSmartTemplatePayload();
+      if (payload.length) {
+        showToast('正在按已上传模板智能排座...');
+        callSmartSeating(payload);
+        return;
+      }
+      openModal('smartModal');
+      showToast('请先下载并上传专业版模板');
+    }
+
+    function updateProUI() {
+      const pro = getProStatus();
+      dom.planBadge.textContent = pro.isPro ? '专业版' : '免费版';
+      dom.planBadge.className = pro.isPro
+        ? 'rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-emerald-200/40'
+        : 'rounded-full bg-white/16 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-white/22';
+      dom.topActivateBtn.classList.toggle('hidden', pro.isPro);
+      dom.downloadRosterTemplateBtn.textContent = pro.isPro ? '下载专业模板' : '下载名单模板';
+      dom.templateHint.textContent = pro.isPro
+        ? '专业模板包含身高、视力、性别和同桌偏好，可用于智能排座。'
+        : '免费模板只包含姓名列，适合快速导入。';
+      dom.exportBadge.textContent = pro.isPro ? '专业版高清导出' : '班主任智能排座';
+      dom.smartActivateBtn.textContent = pro.isPro ? '已激活，可上传模板生成座位' : '激活后使用云端智能排座';
+      dom.smartActivateBtn.disabled = pro.isPro;
+      dom.smartActivateBtn.classList.toggle('opacity-60', pro.isPro);
+      dom.smartRuleInputs.forEach(input => {
+        input.disabled = !pro.isPro;
+        input.closest('.smart-rule').classList.toggle('opacity-45', !pro.isPro);
+        input.closest('.smart-rule').classList.toggle('cursor-not-allowed', !pro.isPro);
+      });
+
+      document.querySelectorAll('.pro-action').forEach(button => {
+        button.classList.toggle('bg-gray-100', !pro.isPro);
+        button.classList.toggle('text-soft', !pro.isPro);
+        button.classList.toggle('bg-white', pro.isPro);
+        button.classList.toggle('text-brand', pro.isPro);
+        button.classList.toggle('border-indigo-100', pro.isPro);
+        button.textContent = button.textContent.replace('🔒 ', '');
+        if (!pro.isPro) button.textContent = `🔒 ${button.textContent}`;
+      });
+    }
+
+    function render() {
+      dom.nameInput.value = appState.students.join('\n');
+      dom.rowInput.value = appState.rows;
+      dom.colInput.value = appState.cols;
+      dom.deskMode.value = appState.deskMode;
+      dom.smartRuleInputs.forEach(input => {
+        input.checked = input.type === 'radio'
+          ? appState.smartRules?.[input.dataset.rule] === input.value
+          : Boolean(appState.smartRules?.[input.dataset.rule]);
+      });
+      dom.debugInfoToggle.checked = Boolean(appState.showDebugInfo);
+      updateGenderPositionVisibility();
+      dom.studentCount.textContent = `${appState.students.length} 人`;
+      dom.canvasMeta.textContent = appState.deskMode === 'custom'
+        ? `自定义混合桌型，共 ${appState.rows * appState.cols} 个座位`
+        : `${appState.rows} 行 × ${appState.cols} 列，共 ${appState.rows * appState.cols} 个座位`;
+      renderSeats();
+      updateProUI();
+      saveState();
+    }
+
+    function renderSeats() {
+      sortableInstances.forEach(instance => instance.destroy());
+      sortableInstances = [];
+      dom.seatCanvas.innerHTML = '';
+      unresolvedConflictNames = new Set(collectUnresolvedConflictsFromSeats().flatMap(item => item.names));
+      talkativeWarningNames = new Set(collectTalkativeAdjacencyFromSeats().flatMap(item => item.names));
+      if (appState.deskMode === 'custom') {
+        renderCustomSeats();
+        initSortable();
+        return;
+      }
+
+      const columnLayout = buildRowsFromCurrentMode()[0] || [];
+      dom.seatCanvas.appendChild(createClassroomGrid(columnLayout));
+      initSortable();
+      renderConflictNotice();
+    }
+
+    function renderCustomSeats() {
+      const rows = buildCustomRows();
+      dom.seatCanvas.appendChild(createClassroomGrid(rows[0] || []));
+      renderConflictNotice();
+    }
+
+    function buildCustomRows() {
+      const parsedRows = parseCustomLayout(appState.customLayout);
+      const baseRow = normalizeColumnLayout(parsedRows[0] || []);
+      return Array.from({ length: appState.rows }, () => [...baseRow]);
+    }
+
+    function normalizeColumnLayout(row) {
+      const result = [];
+      let usedSeats = 0;
+
+      row.forEach(type => {
+        const seatCount = getDeskSeatCount(type);
+        if (usedSeats + seatCount <= appState.cols) {
+          result.push(type);
+          usedSeats += seatCount;
+        }
+      });
+
+      while (usedSeats < appState.cols) {
+        result.push('single');
+        usedSeats += 1;
+      }
+
+      return result;
+    }
+
+    function normalizeCustomLayoutForGrid(layoutText) {
+      const previous = appState.customLayout;
+      appState.customLayout = layoutText || defaultState.customLayout;
+      const normalized = customRowsToText([buildCustomRows()[0] || []]);
+      appState.customLayout = previous;
+      return normalized;
+    }
+
+    function parseCustomLayout(layoutText) {
+      const tokenMap = {
+        '1': 'single',
+        '单': 'single',
+        '单人': 'single',
+        '单人桌': 'single',
+        '2': 'double',
+        '双': 'double',
+        '双人': 'double',
+        '双人桌': 'double',
+        '3': 'triple-row',
+        '3H': 'triple-row',
+        '三': 'triple-row',
+        '三横': 'triple-row',
+        '三人': 'triple-row',
+        '横排': 'triple-row',
+        '3P': 'triple-pyramid',
+        '品': 'triple-pyramid',
+        '三品': 'triple-pyramid',
+        '品字': 'triple-pyramid',
+        '品字形': 'triple-pyramid'
+      };
+
+      return layoutText
+        .split('\n')
+        .map(line => line.split(/[\s,，、/|]+/).map(token => token.trim()).filter(Boolean))
+        .map(tokens => tokens.map(token => tokenMap[token.toUpperCase()] || tokenMap[token]).filter(Boolean))
+        .filter(row => row.length);
+    }
+
+    function getDeskSeatCount(type) {
+      if (type === 'double') return 2;
+      if (type === 'triple-row' || type === 'triple-pyramid') return 3;
+      return 1;
+    }
+
+    function createClassroomGrid(columnLayout) {
+      const grid = document.createElement('div');
+      grid.className = 'grid items-stretch gap-y-2';
+      grid.style.gridTemplateColumns = buildGridTemplateColumns(columnLayout);
+
+      createColumnControlCells(columnLayout).forEach(cell => grid.appendChild(cell));
+
+      for (let rowIndex = 0; rowIndex < appState.rows; rowIndex++) {
+        const rowLabel = document.createElement('div');
+        rowLabel.className = 'seat-row-label flex items-center justify-center rounded-lg bg-white/70 px-2 text-xs font-semibold leading-4 text-soft ring-1 ring-gray-100';
+        rowLabel.style.gridColumn = '1';
+        rowLabel.title = '从讲台方向开始计数';
+        rowLabel.textContent = String(appState.rows - rowIndex);
+        grid.appendChild(rowLabel);
+
+        let seatOffset = 0;
+        columnLayout.forEach((type, groupIndex) => {
+          const controlColumn = getGridColumnForGroup(columnLayout, groupIndex);
+          const seatCount = getDeskSeatCount(type);
+          const desk = document.createElement('div');
+          desk.className = 'desk rounded-lg bg-white/45 p-1 shadow-sm hover:shadow-lift';
+          desk.style.gridColumn = `${controlColumn} / span ${seatCount}`;
+          desk.dataset.deskType = type;
+          desk.dataset.seatStart = String(seatOffset);
+
+          const deskInner = document.createElement('div');
+          deskInner.className = getDeskInnerClass(type);
+          for (let offset = 0; offset < seatCount; offset++) {
+            deskInner.appendChild(createSeat(rowIndex * appState.cols + seatOffset + offset));
+          }
+
+          desk.appendChild(deskInner);
+          grid.appendChild(desk);
+          seatOffset += seatCount;
+
+          if (groupIndex < columnLayout.length - 1) {
+            const aisle = document.createElement('div');
+            aisle.className = 'seat-aisle flex items-center justify-center rounded-md bg-gray-100/80 px-1 text-[11px] font-semibold leading-4 text-soft';
+            aisle.style.gridColumn = String(controlColumn + seatCount);
+            aisle.textContent = '过道';
+            grid.appendChild(aisle);
+          }
+        });
+      }
+
+      return grid;
+    }
+
+    function buildGridTemplateColumns(columnLayout) {
+      const tracks = ['42px'];
+      columnLayout.forEach((type, index) => {
+        for (let i = 0; i < getDeskSeatCount(type); i++) tracks.push('minmax(92px, 1fr)');
+        if (index < columnLayout.length - 1) tracks.push('34px');
+      });
+      return tracks.join(' ');
+    }
+
+    function getGridColumnForGroup(columnLayout, groupIndex) {
+      let column = 2;
+      for (let index = 0; index < groupIndex; index++) {
+        column += getDeskSeatCount(columnLayout[index]) + 1;
+      }
+      return column;
+    }
+
+    function createColumnControlCells(columnLayout) {
+      const cells = [];
+      const corner = document.createElement('div');
+      corner.className = 'export-hide min-h-9';
+      corner.style.gridColumn = '1';
+      cells.push(corner);
+
+      columnLayout.forEach((type, index) => {
+        const seatCount = getDeskSeatCount(type);
+        const groupColumn = getGridColumnForGroup(columnLayout, index);
+        const cell = document.createElement('div');
+        cell.className = 'export-hide flex min-h-9 items-center justify-center';
+        cell.style.gridColumn = `${groupColumn} / span ${seatCount}`;
+
+        if (type !== 'single') {
+          cell.appendChild(createColumnActionButton('split', index, '分离'));
+        }
+
+        cells.push(cell);
+
+        if (index < columnLayout.length - 1) {
+          const aisleCell = document.createElement('div');
+          aisleCell.className = 'export-hide flex min-h-9 items-center justify-center';
+          aisleCell.style.gridColumn = String(groupColumn + seatCount);
+          if (type === 'single' && columnLayout[index + 1] === 'single') {
+            aisleCell.appendChild(createColumnActionButton('merge', index, '合并'));
+          }
+          cells.push(aisleCell);
+        }
+      });
+
+      return cells;
+    }
+
+    function createColumnActionButton(action, groupIndex, text) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'whitespace-nowrap rounded-full border border-gray-200 bg-white/95 px-3.5 py-1.5 text-sm font-semibold leading-5 text-muted shadow-sm ring-1 ring-white/80 hover:border-brand hover:text-brand hover:shadow-lift';
+      button.dataset.columnAction = action;
+      button.dataset.groupIndex = String(groupIndex);
+      button.textContent = text;
+      return button;
+    }
+
+    function applyColumnAction(action, groupIndex) {
+      const layout = getCurrentColumnLayout();
+      if (!layout[groupIndex]) return;
+      const nextLayout = [...layout];
+
+      if (action === 'split') {
+        const seatCount = getDeskSeatCount(nextLayout[groupIndex]);
+        if (seatCount === 1) return;
+        nextLayout.splice(groupIndex, 1, ...Array(seatCount).fill('single'));
+      }
+
+      if (action === 'merge') {
+        if (nextLayout[groupIndex] !== 'single' || nextLayout[groupIndex + 1] !== 'single') return;
+        nextLayout.splice(groupIndex, 2, 'double');
+      }
+
+      appState.deskMode = 'custom';
+      appState.customLayout = customRowsToText([normalizeColumnLayout(nextLayout)]);
+      appState.seats = normalizeSeats(appState.seats, appState.rows * appState.cols);
+      render();
+      showToast(action === 'split' ? '已分离该列组' : '已合并相邻列');
+    }
+
+    function getCurrentColumnLayout() {
+      if (appState.deskMode === 'custom') return buildCustomRows()[0] || [];
+      return buildRowsFromCurrentMode()[0] || [];
+    }
+
+    function customRowsToText(rows) {
+      const tokens = {
+        single: '单',
+        double: '双',
+        'triple-row': '三横',
+        'triple-pyramid': '三品'
+      };
+      return rows.map(row => row.map(type => tokens[type] || '单').join(' ')).join('\n');
+    }
+
+    function buildRowsFromCurrentMode() {
+      if (appState.deskMode === 'custom') return buildCustomRows();
+      const groupSize = appState.deskMode === 'single' ? 1 : appState.deskMode === 'double' ? 2 : 3;
+      return Array.from({ length: appState.rows }, () => {
+        const row = [];
+        for (let colIndex = 0; colIndex < appState.cols;) {
+          const seatCount = Math.min(groupSize, appState.cols - colIndex);
+          row.push(seatCount === 1 ? 'single' : seatCount === 2 ? 'double' : 'triple-row');
+          colIndex += seatCount;
+        }
+        return row;
+      });
+    }
+
+    function getDeskInnerClass(type = appState.deskMode) {
+      if (type === 'triple-pyramid') {
+        return 'grid grid-cols-2 gap-2 [&>.seat:nth-child(3)]:col-span-2 [&>.seat:nth-child(3)]:mx-auto [&>.seat:nth-child(3)]:w-1/2';
+      }
+      if (type === 'triple-row') return 'grid grid-cols-3 gap-2';
+      if (type === 'double') return 'grid grid-cols-2 gap-2';
+      return 'grid grid-cols-1 gap-2';
+    }
+
+    function createSeat(index) {
+      const seat = document.createElement('div');
+      seat.className = 'seat seat-drop flex items-center justify-center rounded-xl p-1';
+      seat.dataset.index = String(index);
+      const name = appState.seats[index];
+      if (name) seat.appendChild(createStudentChip(name));
+      return seat;
+    }
+
+    function createStudentChip(name) {
+      const chip = document.createElement('div');
+      const detail = appState.studentDetails?.[name];
+      const gender = String(detail?.gender || '');
+      const genderClass = gender.includes('男') ? 'gender-male' : gender.includes('女') ? 'gender-female' : '';
+      const conflictClass = unresolvedConflictNames.has(name) ? 'conflict-unresolved' : '';
+      const talkativeClass = talkativeWarningNames.has(name) ? 'talkative-warning' : '';
+      const meta = detail && appState.showDebugInfo ? [
+        detail.height ? `${detail.height}cm` : '',
+        detail.vision ? `视力${detail.vision}` : '',
+        detail.rank ? `名次${detail.rank}` : ''
+      ].filter(Boolean) : [];
+      chip.className = `student-chip ${genderClass} ${conflictClass} ${talkativeClass} flex min-h-9 w-full flex-col items-center justify-center rounded-lg bg-white px-2 py-1.5 text-center text-sm font-semibold leading-5 text-ink`;
+      chip.dataset.name = name;
+      if (talkativeClass) chip.title = '爱讲话学生前后左右相邻，请手动调整';
+      if (conflictClass) chip.title = '冲突名单学生同桌或相邻，请手动调整';
+      chip.innerHTML = `<span>${escapeHTML(name)}</span>${meta.length ? `<span class="student-meta mt-0.5 text-[11px] font-medium leading-4 text-soft">${escapeHTML(meta.join(' | '))}</span>` : ''}`;
+      return chip;
+    }
+
+    function getFrontToBackSeatIndices() {
+      const indices = [];
+      for (let row = appState.rows - 1; row >= 0; row--) {
+        for (let col = 0; col < appState.cols; col++) {
+          indices.push(row * appState.cols + col);
+        }
+      }
+      return indices;
+    }
+
+    function smartValue(item, keys) {
+      for (const key of keys) {
+        const value = Number.parseFloat(item[key]);
+        if (Number.isFinite(value)) return value;
+      }
+      return null;
+    }
+
+    function needsVisionCare(item) {
+      const nearSighted = String(item['是否近视'] || '').includes('是');
+      const vision = smartValue(item, ['视力', 'vision']);
+      return nearSighted || (vision !== null && vision < 4.9);
+    }
+
+    function compareRank(a, b) {
+      const aRank = smartValue(a, ['名次', '排名', 'rank']);
+      const bRank = smartValue(b, ['名次', '排名', 'rank']);
+      if (aRank !== null && bRank !== null && aRank !== bRank) return aRank - bRank;
+      if (aRank !== null && bRank === null) return -1;
+      if (aRank === null && bRank !== null) return 1;
+      return a.__index - b.__index;
+    }
+
+    function genderOf(item) {
+      const gender = String(item['性别'] || item.gender || '');
+      if (gender.includes('男')) return 'male';
+      if (gender.includes('女')) return 'female';
+      return 'other';
+    }
+
+    function orderGenderPair(first, second, rules) {
+      if (rules.genderMode !== 'mixed') return [first, second];
+      if (rules.genderPosition === 'none') return [first, second];
+      const firstGender = genderOf(first);
+      const secondGender = genderOf(second);
+      if (firstGender === secondGender || firstGender === 'other' || secondGender === 'other') return [first, second];
+      const male = firstGender === 'male' ? first : second;
+      const female = firstGender === 'female' ? first : second;
+      return rules.genderPosition === 'female-left' ? [female, male] : [male, female];
+    }
+
+    function buildScorePairs(items, rules) {
+      const remaining = [...items].sort(compareRank);
+      const result = [];
+
+      while (remaining.length) {
+        const first = remaining.shift();
+        let partnerIndex = remaining.length - 1;
+
+        if (['mixed', 'same'].includes(rules.genderMode)) {
+          const firstGender = genderOf(first);
+          const matchedFromBack = remaining
+            .map((item, index) => ({ item, index }))
+            .reverse()
+            .find(({ item }) => {
+              const nextGender = genderOf(item);
+              if (firstGender === 'other' || nextGender === 'other') return false;
+              return rules.genderMode === 'mixed' ? nextGender !== firstGender : nextGender === firstGender;
+            });
+          if (matchedFromBack) partnerIndex = matchedFromBack.index;
+        }
+
+        if (partnerIndex >= 0) {
+          const [partner] = remaining.splice(partnerIndex, 1);
+          result.push(...orderGenderPair(first, partner, rules));
+        } else {
+          result.push(first);
+        }
+      }
+
+      return result;
+    }
+
+    function applyPairPositionOnly(items, rules) {
+      const result = [...items];
+      for (let index = 0; index < result.length - 1; index += 2) {
+        const [first, second] = orderGenderPair(result[index], result[index + 1], rules);
+        result[index] = first;
+        result[index + 1] = second;
+      }
+      return result;
+    }
+
+    function genderPairScore(a, b, rules) {
+      if (!['mixed', 'same'].includes(rules.genderMode) || !a || !b) return 0;
+      const firstGender = genderOf(a);
+      const secondGender = genderOf(b);
+      if (firstGender === 'other' || secondGender === 'other') return 0;
+      if (rules.genderMode === 'mixed') return firstGender !== secondGender ? 1 : 0;
+      return firstGender === secondGender ? 1 : 0;
+    }
+
+    function rowGenderScore(row, deskGroups, rules) {
+      return deskGroups.reduce((score, group) => {
+        if (group.length < 2) return score;
+        return score + genderPairScore(row[group[0]], row[group[1]], rules);
+      }, 0);
+    }
+
+    function optimizeGenderWithinRows(items, rules) {
+      if (!['mixed', 'same'].includes(rules.genderMode)) return items;
+      const rowSize = Math.max(1, appState.cols);
+      const deskGroups = buildDeskGroups();
+      const optimized = [];
+
+      for (let start = 0; start < items.length; start += rowSize) {
+        const row = items.slice(start, start + rowSize);
+        let bestScore = rowGenderScore(row, deskGroups, rules);
+        let improved = true;
+
+        while (improved) {
+          improved = false;
+          for (let left = 0; left < row.length; left++) {
+            for (let right = left + 1; right < row.length; right++) {
+              const candidate = [...row];
+              [candidate[left], candidate[right]] = [candidate[right], candidate[left]];
+              const nextScore = rowGenderScore(candidate, deskGroups, rules);
+              if (nextScore > bestScore) {
+                row.splice(0, row.length, ...candidate);
+                bestScore = nextScore;
+                improved = true;
+              }
+            }
+          }
+        }
+
+        optimized.push(...applyPairPositionOnly(row, rules));
+      }
+
+      return optimized;
+    }
+
+    function applyPreferencePairs(items) {
+      const result = [...items];
+      const nameToIndex = () => new Map(result.map((item, index) => [item['姓名'], index]));
+      for (let index = 0; index < result.length; index++) {
+        const preferredName = String(result[index]['希望同桌'] || '').trim();
+        if (!preferredName) continue;
+        const targetIndex = nameToIndex().get(preferredName);
+        if (targetIndex === undefined || Math.abs(targetIndex - index) <= 1) continue;
+        const insertIndex = Math.min(index + 1, result.length - 1);
+        const [target] = result.splice(targetIndex, 1);
+        result.splice(targetIndex < insertIndex ? insertIndex - 1 : insertIndex, 0, target);
+      }
+      return result;
+    }
+
+    function splitNameList(value) {
+      return String(value || '')
+        .split(/[\n,，、;；/|｜\s]+/)
+        .map(name => name.trim())
+        .filter(Boolean);
+    }
+
+    function itemName(item) {
+      return String(item?.['姓名'] || item?.name || '').trim();
+    }
+
+    function isTalkative(item) {
+      const value = String(
+        item?.['是否爱讲话'] || item?.['爱讲话'] || item?.['话多'] || item?.talkative || ''
+      ).trim().toLowerCase();
+      return ['是', '有', '1', 'true', 'yes', 'y', '话多', '爱讲话'].some(token => value.includes(token));
+    }
+
+    function getConflictNames(item) {
+      return splitNameList(
+        item['不想同桌'] || item['冲突名单'] || item['不想和谁坐'] || item.conflicts || item.avoid || ''
+      );
+    }
+
+    function hasConflictBetween(a, b) {
+      if (!a || !b) return false;
+      const aName = itemName(a);
+      const bName = itemName(b);
+      return getConflictNames(a).includes(bName) || getConflictNames(b).includes(aName);
+    }
+
+    function buildDeskGroups() {
+      const groups = [];
+      let offset = 0;
+      getCurrentColumnLayout().forEach(type => {
+        const seatCount = getDeskSeatCount(type);
+        groups.push(Array.from({ length: seatCount }, (_, index) => offset + index));
+        offset += seatCount;
+      });
+      return groups;
+    }
+
+    function conflictPenaltyForRow(row, deskGroups) {
+      let penalty = 0;
+      for (let left = 0; left < row.length; left++) {
+        for (let right = left + 1; right < row.length; right++) {
+          if (!hasConflictBetween(row[left], row[right])) continue;
+          const sameDesk = deskGroups.some(group => group.includes(left) && group.includes(right));
+          const distance = right - left;
+          if (sameDesk) penalty += 100;
+          if (distance === 1) penalty += 35;
+          penalty += Math.max(0, 8 - distance);
+        }
+      }
+      return penalty;
+    }
+
+    function collectUnresolvedConflictsFromSeats() {
+      const details = appState.studentDetails || {};
+      const rowSize = Math.max(1, appState.cols);
+      const deskGroups = buildDeskGroups();
+      const conflicts = [];
+      const seen = new Set();
+
+      for (let start = 0; start < appState.seats.length; start += rowSize) {
+        const rowSeats = appState.seats.slice(start, start + rowSize);
+        const rowItems = rowSeats.map(name => details[name]).filter(Boolean);
+        for (let left = 0; left < rowItems.length; left++) {
+          for (let right = left + 1; right < rowItems.length; right++) {
+            if (!hasConflictBetween(rowItems[left], rowItems[right])) continue;
+            const leftIndex = rowSeats.indexOf(itemName(rowItems[left]));
+            const rightIndex = rowSeats.indexOf(itemName(rowItems[right]));
+            const sameDesk = deskGroups.some(group => group.includes(leftIndex) && group.includes(rightIndex));
+            const tooClose = Math.abs(leftIndex - rightIndex) <= 1;
+            if (!sameDesk && !tooClose) continue;
+            const names = [itemName(rowItems[left]), itemName(rowItems[right])].sort();
+            const key = names.join('|');
+            if (seen.has(key)) continue;
+            seen.add(key);
+            conflicts.push({ names, sameDesk });
+          }
+        }
+      }
+
+      return conflicts;
+    }
+
+    function getAdjacentSeatPairs() {
+      const pairs = [];
+      for (let row = 0; row < appState.rows; row++) {
+        for (let col = 0; col < appState.cols; col++) {
+          const index = row * appState.cols + col;
+          if (col < appState.cols - 1) pairs.push([index, index + 1]);
+          if (row < appState.rows - 1) pairs.push([index, index + appState.cols]);
+        }
+      }
+      return pairs;
+    }
+
+    function collectTalkativeAdjacencyFromSeats(seats = appState.seats) {
+      const details = appState.studentDetails || {};
+      const warnings = [];
+      const seen = new Set();
+      getAdjacentSeatPairs().forEach(([left, right]) => {
+        const leftItem = details[seats[left]];
+        const rightItem = details[seats[right]];
+        if (!isTalkative(leftItem) || !isTalkative(rightItem)) return;
+        const names = [itemName(leftItem), itemName(rightItem)].sort();
+        const key = names.join('|');
+        if (seen.has(key)) return;
+        seen.add(key);
+        warnings.push({ names });
+      });
+      return warnings;
+    }
+
+    function talkativePenaltyForSeats(seats) {
+      return collectTalkativeAdjacencyFromSeats(seats).length * 40;
+    }
+
+    function optimizeTalkativeSpacingForSeats(seats) {
+      let best = [...seats];
+      let bestPenalty = talkativePenaltyForSeats(best);
+      let improved = true;
+
+      while (improved && bestPenalty > 0) {
+        improved = false;
+        for (let left = 0; left < best.length; left++) {
+          for (let right = left + 1; right < best.length; right++) {
+            const candidate = [...best];
+            [candidate[left], candidate[right]] = [candidate[right], candidate[left]];
+            const nextPenalty = talkativePenaltyForSeats(candidate);
+            if (nextPenalty < bestPenalty) {
+              best = candidate;
+              bestPenalty = nextPenalty;
+              improved = true;
+            }
+          }
+        }
+      }
+
+      return best;
+    }
+
+    function enforceGenderPositionForSeats(seats, rules = appState.smartRules) {
+      if (rules?.genderMode !== 'mixed' || !['male-left', 'female-left'].includes(rules?.genderPosition)) return seats;
+      const next = [...seats];
+      const details = appState.studentDetails || {};
+      const expectedLeft = rules.genderPosition === 'female-left' ? 'female' : 'male';
+      const rowSize = Math.max(1, appState.cols);
+      const deskGroups = buildDeskGroups();
+
+      for (let rowStart = 0; rowStart < next.length; rowStart += rowSize) {
+        deskGroups.forEach(group => {
+          if (group.length < 2) return;
+          for (let index = 0; index < group.length - 1; index++) {
+            const leftIndex = rowStart + group[index];
+            const rightIndex = rowStart + group[index + 1];
+            const leftItem = details[next[leftIndex]];
+            const rightItem = details[next[rightIndex]];
+            const leftGender = leftItem ? genderOf(leftItem) : 'other';
+            const rightGender = rightItem ? genderOf(rightItem) : 'other';
+            if (leftGender === 'other' || rightGender === 'other' || leftGender === rightGender) continue;
+            if (leftGender !== expectedLeft) {
+              [next[leftIndex], next[rightIndex]] = [next[rightIndex], next[leftIndex]];
+            }
+          }
+        });
+      }
+
+      return next;
+    }
+
+    function renderConflictNotice() {
+      const conflicts = collectUnresolvedConflictsFromSeats();
+      const talkativeWarnings = collectTalkativeAdjacencyFromSeats();
+      appState.unresolvedConflicts = conflicts;
+      dom.conflictNotice.className = 'export-hide hidden mb-3 grid gap-2 md:grid-cols-2';
+      const messages = [];
+
+      if (conflicts.length) {
+        const names = conflicts.slice(0, 4).map(item => item.names.join(' 和 ')).join('；');
+        const more = conflicts.length > 4 ? ` 等 ${conflicts.length} 组` : '';
+        messages.push({
+          title: `${conflicts.length} 组冲突${more}`,
+          body: `${names}不能同桌，请手动调整。`
+        });
+      }
+
+      if (talkativeWarnings.length) {
+        const names = talkativeWarnings.slice(0, 4).map(item => item.names.join(' 和 ')).join('；');
+        const more = talkativeWarnings.length > 4 ? ` 等 ${talkativeWarnings.length} 组` : '';
+        messages.push({
+          title: `${talkativeWarnings.length} 组爱讲话相邻${more}`,
+          body: `${names}前后左右相邻，请手动调整。黄色边框为提醒。`
+        });
+      }
+
+      if (!messages.length) {
+        dom.conflictNotice.classList.add('hidden');
+        dom.conflictNotice.innerHTML = '';
+        return;
+      }
+
+      dom.conflictNotice.classList.remove('hidden');
+      dom.conflictNotice.innerHTML = `
+        ${messages.map(message => `
+          <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-4 text-amber-800 shadow-sm">
+            <div class="font-semibold">${escapeHTML(message.title)}</div>
+            <div class="mt-0.5 font-medium text-amber-700">${escapeHTML(message.body)}</div>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function optimizeConflictsWithinRows(items) {
+      const rowSize = Math.max(1, appState.cols);
+      const deskGroups = buildDeskGroups();
+      const optimized = [];
+
+      for (let start = 0; start < items.length; start += rowSize) {
+        const row = items.slice(start, start + rowSize);
+        let bestPenalty = conflictPenaltyForRow(row, deskGroups);
+        let improved = true;
+
+        while (improved && bestPenalty > 0) {
+          improved = false;
+          for (let left = 0; left < row.length; left++) {
+            for (let right = left + 1; right < row.length; right++) {
+              const candidate = [...row];
+              [candidate[left], candidate[right]] = [candidate[right], candidate[left]];
+              const nextPenalty = conflictPenaltyForRow(candidate, deskGroups);
+              if (nextPenalty < bestPenalty) {
+                row.splice(0, row.length, ...candidate);
+                bestPenalty = nextPenalty;
+                improved = true;
+              }
+            }
+          }
+        }
+
+        optimized.push(...row);
+      }
+
+      return optimized;
+    }
+
+    function buildDemoSmartOrder(studentDetails) {
+      const rules = normalizeSmartRules(appState.smartRules);
+      const items = studentDetails.map((item, index) => ({ ...item, __index: index }));
+      items.sort((a, b) => {
+        if (rules.goal === 'front') {
+          const aNeedsCare = needsVisionCare(a) ? 1 : 0;
+          const bNeedsCare = needsVisionCare(b) ? 1 : 0;
+          if (aNeedsCare !== bNeedsCare) return bNeedsCare - aNeedsCare;
+        }
+
+        if (rules.goal === 'front') {
+          const aHeight = smartValue(a, ['身高(cm)', '身高', '身高cm', 'height']);
+          const bHeight = smartValue(b, ['身高(cm)', '身高', '身高cm', 'height']);
+          if (aHeight !== null && bHeight !== null && aHeight !== bHeight) return aHeight - bHeight;
+        }
+
+        if (rules.goal === 'score' || rules.goal === 'rank') {
+          return compareRank(a, b);
+        }
+
+        return a.__index - b.__index;
+      });
+
+      if (rules.goal === 'score') {
+        return optimizeConflictsWithinRows(optimizeGenderWithinRows(buildScorePairs(items, { ...rules, genderMode: 'none' }), rules));
+      }
+
+      if (rules.goal === 'rank') {
+        return optimizeConflictsWithinRows(optimizeGenderWithinRows(items, rules));
+      }
+
+      let ordered = [...items];
+      return optimizeConflictsWithinRows(optimizeGenderWithinRows(applyPreferencePairs(ordered), rules));
+    }
+
+    function describeEnabledRules() {
+      const rules = normalizeSmartRules(appState.smartRules);
+      const goals = {
+        front: '优先前排',
+        score: '成绩互助',
+        rank: '成绩排序'
+      };
+      const genderModes = {
+        mixed: '男女搭配',
+        same: '同性搭配'
+      };
+      const genderPosition = rules.genderMode === 'mixed' && rules.genderPosition !== 'none'
+        ? (rules.genderPosition === 'female-left' ? '女左男右' : '男左女右')
+        : '';
+      return [goals[rules.goal] || '模板顺序', genderModes[rules.genderMode], genderPosition].filter(Boolean).join(' + ');
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[char]));
+    }
+
+    function initSortable() {
+      document.querySelectorAll('.seat-drop').forEach(seat => {
+        const sortable = new Sortable(seat, {
+          group: 'students',
+          animation: 200,
+          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+          ghostClass: 'sortable-ghost',
+          chosenClass: 'sortable-chosen',
+          dragClass: 'sortable-drag',
+          onAdd(event) {
+            if (event.to.children.length > 1 && event.from) {
+              const displaced = [...event.to.children].find(child => child !== event.item);
+              if (displaced) event.from.appendChild(displaced);
+            }
+            syncSeatsFromDOM();
+          },
+          onEnd() {
+            syncSeatsFromDOM();
+          }
+        });
+        sortableInstances.push(sortable);
+      });
+    }
+
+    function syncSeatsFromDOM() {
+      const next = Array(appState.rows * appState.cols).fill('');
+      document.querySelectorAll('.seat-drop').forEach(seat => {
+        const index = Number(seat.dataset.index);
+        const chip = seat.querySelector('.student-chip');
+        next[index] = chip ? chip.dataset.name : '';
+      });
+      appState.seats = next;
+      saveState();
+      render();
+    }
+
+    function fillEmptySeats(message = '座位已按名单填入') {
+      const seated = new Set(appState.seats.filter(Boolean));
+      const waiting = appState.students.filter(name => !seated.has(name));
+      appState.seats = appState.seats.map(name => name || waiting.shift() || '');
+      render();
+      showToast(message);
+    }
+
+    function ensurePro() {
+      if (getProStatus().isPro) return true;
+      openModal('activateModal');
+      showToast('请先激活专业版');
+      return false;
+    }
+
+    function rotateRows() {
+      if (!ensurePro()) return;
+      const rows = chunk(appState.seats, appState.cols);
+      rows.unshift(rows.pop());
+      appState.seats = rows.flat();
+      render();
+      showToast('整排轮换完成：每排向讲台方向移动一排');
+    }
+
+    function shiftColumnsLeft() {
+      if (!ensurePro()) return;
+      const rows = chunk(appState.seats, appState.cols);
+      appState.seats = rows.map(row => {
+        if (row.length <= 1) return row;
+        const [first, ...rest] = row;
+        return [...rest, first];
+      }).flat();
+      render();
+      showToast('整列左移完成：每排向左移动一列');
+    }
+
+    function chunk(items, size) {
+      const result = [];
+      for (let index = 0; index < items.length; index += size) result.push(items.slice(index, index + size));
+      return result;
+    }
+
+    async function activateWithCode(code) {
+      const cleanCode = code.trim().toUpperCase();
+      const account = dom.modalUserInput.value.trim();
+      if (!cleanCode) {
+        showToast('请输入兑换码');
+        return;
+      }
+      if (!account) {
+        showToast('请输入手机号或邮箱，用于绑定设备');
+        return;
+      }
+
+      try {
+        const deviceId = getClientDeviceId();
+        const activationPayload = {
+          code: cleanCode,
+          account,
+          client_id: deviceId,
+          max_devices: MAX_BOUND_DEVICES
+        };
+
+        if (ACTIVATION_FUNCTION_URL.includes('YOUR_')) {
+          showToast('请先配置激活验证接口');
+          return;
+        }
+
+        const response = await fetch(ACTIVATION_FUNCTION_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(SUPABASE_ANON_KEY.includes('YOUR_') ? {} : { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` })
+          },
+          body: JSON.stringify(activationPayload)
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.success) {
+          showToast(result.message || '兑换码无效、已过期或绑定设备已满');
+          return;
+        }
+
+        setProStatus(result.days || 365, {
+          account,
+          deviceId,
+          maxDevices: result.max_devices || MAX_BOUND_DEVICES,
+          expiresAt: result.expires_at || result.proExpiry
+        });
+        showActivationSuccess();
+      } catch (error) {
+        showToast(`激活失败：${error.message || '请稍后再试'}`);
+      }
+    }
+
+    function showActivationSuccess() {
+      dom.successIcon.classList.remove('hidden');
+      setTimeout(() => {
+        dom.successIcon.classList.add('hidden');
+        closeModal('activateModal');
+      }, 680);
+      updateProUI();
+      showToast('专业版已激活');
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+      document.getElementById(id).classList.add('flex');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      document.getElementById(id).classList.remove('flex');
+    }
+
+    function showToast(message) {
+      dom.toast.textContent = message;
+      dom.toast.classList.remove('hidden', 'toast-in');
+      void dom.toast.offsetWidth;
+      dom.toast.classList.add('toast-in');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => dom.toast.classList.add('hidden'), 2400);
+    }
+
+    function downloadTemplate() {
+      const rows = [
+        ['姓名', '性别', '身高(cm)', '视力', '名次', '是否近视', '是否爱讲话', '希望同桌', '不想同桌', '', '使用说明'],
+        ['张一', '男', 138, 4.5, 18, '是', '否', '', '李二', '', '此表用于智排座专业版智能排座。请保留第一行表头，至少填写“姓名”；身高、视力、性别、名次、冲突和偏好字段越完整，排座越准确。'],
+        ['李二', '女', 151, 5.0, 6, '否', '否', '', '张一', '', ''],
+        ['王三', '男', 145, 4.7, 29, '是', '是', '', '赵四', '', ''],
+        ['赵四', '女', 160, 4.9, 4, '否', '否', '孙五', '王三', '', ''],
+        ['孙五', '男', 142, 4.6, 22, '是', '否', '赵四', '', '', '']
+      ];
+      for (let index = rows.length; index < 31; index++) {
+        rows.push(['', '', '', '', '', '', '', '', '', '', '']);
+      }
+      const sheet = XLSX.utils.aoa_to_sheet(rows);
+      sheet['!cols'] = [
+        { wch: 12 },
+        { wch: 8 },
+        { wch: 10 },
+        { wch: 8 },
+        { wch: 8 },
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 3 },
+        { wch: 42 }
+      ];
+      sheet['!merges'] = [{ s: { r: 1, c: 10 }, e: { r: 4, c: 10 } }];
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, sheet, '专业版模板');
+      XLSX.writeFile(workbook, '智排座专业版模板.xlsx');
+    }
+
+    function downloadRosterTemplate() {
+      if (getProStatus().isPro) {
+        downloadTemplate();
+        return;
+      }
+
+      const rows = [
+        ['姓名'],
+        ['张三'],
+        ['李四'],
+        ['王五']
+      ];
+      const sheet = XLSX.utils.aoa_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, sheet, '学生名单');
+      XLSX.writeFile(workbook, '智排座名单导入模板.xlsx');
+    }
+
+    async function callSmartSeating(studentDetails) {
+      if (!ensurePro()) return;
+      try {
+        if (SMART_SEATING_FUNCTION_URL.includes('YOUR_')) {
+          const orderedStudents = buildDemoSmartOrder(studentDetails);
+          const seatIndices = getFrontToBackSeatIndices();
+          appState.students = orderedStudents.map(item => item['姓名']);
+          appState.studentDetails = Object.fromEntries(orderedStudents.map(item => [item['姓名'], {
+            ...item,
+            name: item['姓名'],
+            height: smartValue(item, ['身高(cm)', '身高', '身高cm', 'height']),
+            vision: smartValue(item, ['视力', 'vision']),
+            gender: item['性别'] || item.gender || '',
+            rank: smartValue(item, ['名次', '排名', 'rank'])
+          }]));
+          appState.seats = Array(appState.rows * appState.cols).fill('');
+          orderedStudents.forEach((item, index) => {
+            if (seatIndices[index] !== undefined) appState.seats[seatIndices[index]] = item['姓名'];
+          });
+          appState.seats = enforceGenderPositionForSeats(optimizeTalkativeSpacingForSeats(appState.seats), normalizeSmartRules(appState.smartRules));
+          render();
+          closeModal('smartModal');
+          showToast(`智能排座完成：已按${describeEnabledRules()}规则生成`);
+          return;
+        }
+
+        const proStatus = getProStatus();
+        const response = await fetch(SMART_SEATING_FUNCTION_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(SUPABASE_ANON_KEY.includes('YOUR_') ? {} : { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` })
+          },
+          body: JSON.stringify({
+            isPro: proStatus.isPro,
+            proExpiry: proStatus.proExpiry,
+            account: proStatus.activationAccount,
+            deviceId: proStatus.activationDeviceId || getClientDeviceId(),
+            rows: appState.rows,
+            cols: appState.cols,
+            deskMode: appState.deskMode,
+            customLayout: appState.customLayout,
+            rules: normalizeSmartRules(appState.smartRules),
+            rulePriority: ['goal', 'genderWithinRow', 'conflictAvoidance', 'softPreferences'],
+            goalSemantics: {
+              score: 'pair_high_low_by_rank_as_primary_goal',
+              rank: 'sort_by_rank_ascending_from_front_to_back',
+              front: 'vision_and_shorter_students_front',
+              genderMode: 'optimize_mixed_or_same_gender_pairing_only_within_each_row_after_primary_goal',
+              genderPosition: 'male_left_or_female_left_when_adjacent_pair_is_mixed_gender',
+              conflictAvoidance: 'avoid_same_desk_first_then_reduce_same_row_closeness_by_swapping_within_row',
+              softPreferences: 'talkative_spread_and_preferred_deskmate_when_possible'
+            },
+            students: studentDetails
+          })
+        });
+
+        if (!response.ok) throw new Error('云端算法拒绝或调用失败');
+        const result = await response.json();
+        appState.students = result.students || studentDetails.map(item => item['姓名']);
+        appState.seats = enforceGenderPositionForSeats(normalizeSeats(result.seats || [], appState.rows * appState.cols), normalizeSmartRules(appState.smartRules));
+        render();
+        closeModal('smartModal');
+        showToast(result.warnings?.length ? '智能排座完成，仍有少量位置建议微调' : '智能排座完成');
+      } catch (error) {
+        showToast(`智能排座失败：${error.message}`);
+      }
+    }
+
+    function prepareCleanExportNode() {
+      const exportNode = dom.exportArea.cloneNode(true);
+      exportNode.classList.add('export-mode');
+      exportNode.style.position = 'fixed';
+      exportNode.style.left = '-12000px';
+      exportNode.style.top = '0';
+      exportNode.style.width = `${dom.exportArea.offsetWidth}px`;
+      exportNode.style.background = '#FFFFFF';
+
+      const exportHeader = exportNode.querySelector('#exportPrintTitle')?.closest('div');
+      if (exportHeader) {
+        exportHeader.style.setProperty('border-bottom', 'none', 'important');
+        exportHeader.style.setProperty('padding-bottom', '0', 'important');
+        exportHeader.style.setProperty('margin-bottom', '22px', 'important');
+      }
+
+      exportNode.querySelectorAll('.conflict-unresolved, .talkative-warning').forEach(chip => {
+        chip.classList.remove('conflict-unresolved', 'talkative-warning');
+        chip.style.outline = 'none';
+        chip.style.boxShadow = 'none';
+      });
+
+      exportNode.querySelectorAll('.student-chip').forEach(chip => {
+        chip.style.setProperty('display', 'flex', 'important');
+        chip.style.setProperty('align-items', 'center', 'important');
+        chip.style.setProperty('justify-content', 'center', 'important');
+        chip.style.setProperty('height', '100%', 'important');
+        chip.style.setProperty('min-height', '44px', 'important');
+        chip.style.setProperty('padding', '0', 'important');
+        chip.style.setProperty('line-height', '1', 'important');
+        chip.style.setProperty('outline', 'none', 'important');
+        chip.style.setProperty('box-shadow', 'none', 'important');
+        chip.style.setProperty('position', 'relative', 'important');
+
+        const nameSpan = chip.querySelector('span:first-child');
+        if (nameSpan) {
+          nameSpan.style.setProperty('display', 'block', 'important');
+          nameSpan.style.setProperty('position', 'absolute', 'important');
+          nameSpan.style.setProperty('left', '0', 'important');
+          nameSpan.style.setProperty('right', '0', 'important');
+          nameSpan.style.setProperty('top', '50%', 'important');
+          nameSpan.style.setProperty('text-align', 'center', 'important');
+          nameSpan.style.setProperty('line-height', '1', 'important');
+          nameSpan.style.setProperty('transform', 'translateY(-56%)', 'important');
+        }
+      });
+
+      exportNode.querySelectorAll('.seat, .seat-row-label, .seat-aisle').forEach(seat => {
+        seat.style.setProperty('display', 'flex', 'important');
+        seat.style.setProperty('align-items', 'center', 'important');
+        seat.style.setProperty('justify-content', 'center', 'important');
+        seat.style.setProperty('line-height', '1', 'important');
+        seat.style.setProperty('padding', '0', 'important');
+      });
+
+      exportNode.querySelectorAll('.seat-row-label, .seat-aisle').forEach(cell => {
+        cell.style.setProperty('padding-top', '0', 'important');
+        cell.style.setProperty('padding-bottom', '2px', 'important');
+      });
+
+      const podium = exportNode.querySelector('#podiumBar');
+      if (podium) {
+        podium.style.setProperty('display', 'flex', 'important');
+        podium.style.setProperty('align-items', 'center', 'important');
+        podium.style.setProperty('justify-content', 'center', 'important');
+        podium.style.setProperty('height', '40px', 'important');
+        podium.style.setProperty('line-height', '1', 'important');
+        podium.style.setProperty('padding-top', '0', 'important');
+        podium.style.setProperty('padding-bottom', '0', 'important');
+        const podiumText = podium.querySelector('span');
+        if (podiumText) {
+          podiumText.style.setProperty('position', 'relative', 'important');
+          podiumText.style.setProperty('top', '-5px', 'important');
+          podiumText.style.setProperty('line-height', '1', 'important');
+        }
+      }
+
+      return exportNode;
+    }
+
+    async function exportImage() {
+      syncSeatsFromDOM();
+      const isPro = getProStatus().isPro;
+      const lastTitle = localStorage.getItem('smart-seating-export-title-v1') || '';
+      const titleInput = prompt('请输入导出标题，例如：初一三班 9月份', lastTitle);
+      if (titleInput === null) return;
+      const cleanTitle = titleInput.trim();
+      if (cleanTitle) localStorage.setItem('smart-seating-export-title-v1', cleanTitle);
+      dom.exportPrintTitle.textContent = cleanTitle ? `${cleanTitle} 班级座位表` : '班级座位表';
+      const exportNode = prepareCleanExportNode();
+      document.body.appendChild(exportNode);
+
+      try {
+        const canvas = await html2canvas(exportNode, {
+          scale: isPro ? 2.5 : 1.4,
+          backgroundColor: '#FFFFFF'
+        });
+
+        if (!isPro) {
+          const context = canvas.getContext('2d');
+          context.save();
+          context.globalAlpha = 0.18;
+          context.fillStyle = '#4F46E5';
+          context.font = 'bold 42px Inter, sans-serif';
+          context.translate(canvas.width / 2, canvas.height / 2);
+          context.rotate(-Math.PI / 8);
+          for (let y = -canvas.height; y < canvas.height; y += 190) {
+            for (let x = -canvas.width; x < canvas.width; x += 340) {
+              context.fillText('智排座', x, y);
+            }
+          }
+          context.restore();
+        }
+
+        const link = document.createElement('a');
+        link.download = isPro ? '智排座-高清座位表.png' : '智排座-普通座位表.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast(isPro ? '高清图片已导出' : '普通图片已导出，已添加水印');
+      } finally {
+        exportNode.remove();
+      }
+    }
+
+    dom.excelInput.addEventListener('change', event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      readWorkbook(file, rows => {
+        const { names, details } = extractStudentDetailsFromRows(rows);
+        appState.students = names.length ? names : extractNamesFromRows(rows);
+        appState.studentDetails = details;
+        appState.smartTemplateStudents = hasSmartTemplateColumns(rows) ? extractObjectsFromRows(rows) : [];
+        const studentSet = new Set(appState.students);
+        appState.seats = normalizeSeats(appState.seats, appState.rows * appState.cols)
+          .map(name => studentSet.has(name) ? name : '');
+        render();
+        showToast(appState.smartTemplateStudents.length
+          ? `已导入专业模板 ${appState.students.length} 人，可直接智能排座`
+          : `已从 Excel 导入 ${appState.students.length} 人，请继续生成座位`);
+        ensureCapacityNotice();
+      });
+      event.target.value = '';
+    });
+
+    dom.downloadRosterTemplateBtn.addEventListener('click', downloadRosterTemplate);
+
+    dom.generateBtn.addEventListener('click', () => {
+      const nextStudents = parseNames(dom.nameInput.value);
+      const nextStudentSet = new Set(nextStudents);
+      appState.students = nextStudents;
+      appState.studentDetails = Object.fromEntries(
+        Object.entries(appState.studentDetails || {}).filter(([name]) => nextStudentSet.has(name))
+      );
+      appState.smartTemplateStudents = (appState.smartTemplateStudents || [])
+        .filter(item => nextStudentSet.has(item['姓名']));
+      appState.rows = Math.max(1, Math.min(12, Number(dom.rowInput.value) || 6));
+      appState.cols = Math.max(1, Math.min(12, Number(dom.colInput.value) || 6));
+      appState.deskMode = dom.deskMode.value;
+      if (appState.deskMode === 'custom') {
+        appState.customLayout = normalizeCustomLayoutForGrid(appState.customLayout);
+      }
+      appState.seats = normalizeSeats(appState.seats, appState.rows * appState.cols);
+      fillEmptySeats(appState.students.length ? '座位已生成，并已按名单填入' : '座位已生成');
+      ensureCapacityNotice();
+    });
+
+    dom.nameInput.addEventListener('input', () => {
+      appState.students = parseNames(dom.nameInput.value);
+      appState.smartTemplateStudents = [];
+      dom.studentCount.textContent = `${appState.students.length} 人`;
+      saveState();
+    });
+
+    dom.smartRuleInputs.forEach(input => {
+      input.addEventListener('change', () => {
+        appState.smartRules = normalizeSmartRules(appState.smartRules);
+        if (input.type === 'radio') {
+          appState.smartRules[input.dataset.rule] = input.value;
+        } else {
+          appState.smartRules[input.dataset.rule] = input.checked;
+        }
+        updateGenderPositionVisibility();
+        if ((appState.smartTemplateStudents || []).length) {
+          showToast('规则已更新，点击“智能排座”重新生成');
+        }
+        saveState();
+      });
+    });
+
+    dom.debugInfoToggle.addEventListener('change', () => {
+      appState.showDebugInfo = dom.debugInfoToggle.checked;
+      render();
+    });
+
+    dom.deskMode.addEventListener('change', () => {
+      appState.deskMode = dom.deskMode.value;
+      if (appState.deskMode === 'custom') {
+        appState.customLayout = normalizeCustomLayoutForGrid(appState.customLayout);
+      }
+      render();
+    });
+
+    dom.seatCanvas.addEventListener('click', event => {
+      const button = event.target.closest('button[data-column-action]');
+      if (!button) return;
+      applyColumnAction(button.dataset.columnAction, Number(button.dataset.groupIndex));
+    });
+
+    dom.smartSeatBtn.addEventListener('click', handleSmartSeatClick);
+    dom.rotateRowsBtn.addEventListener('click', rotateRows);
+    dom.shiftColumnsLeftBtn.addEventListener('click', shiftColumnsLeft);
+    dom.exportBtn.addEventListener('click', exportImage);
+    dom.topActivateBtn.addEventListener('click', () => openModal('activateModal'));
+    dom.modalActivateBtn.addEventListener('click', () => activateWithCode(dom.modalCodeInput.value));
+    dom.downloadTemplateBtn.addEventListener('click', downloadTemplate);
+    dom.smartActivateBtn.addEventListener('click', () => {
+      closeModal('smartModal');
+      openModal('activateModal');
+    });
+
+    dom.smartUploadInput.addEventListener('change', event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      readWorkbook(file, rows => {
+        if (!hasSmartTemplateColumns(rows)) {
+          showToast('请上传包含身高、视力等字段的专业模板');
+          event.target.value = '';
+          return;
+        }
+        const details = extractObjectsFromRows(rows);
+        if (!details.length) {
+          showToast('模板中没有识别到学生信息');
+          return;
+        }
+        appState.smartTemplateStudents = details;
+        appState.students = details.map(item => String(item['姓名'] || '').trim()).filter(Boolean);
+        dom.nameInput.value = appState.students.join('\n');
+        callSmartSeating(details);
+      });
+      event.target.value = '';
+    });
+
+    dom.clearBtn.addEventListener('click', () => {
+      if (!confirm('确认清空本地保存的名单和座位吗？')) return;
+      localStorage.removeItem(storageKey);
+      appState = structuredClone(defaultState);
+      render();
+      showToast('本地数据已清空');
+    });
+
+    document.querySelectorAll('.close-modal').forEach(button => {
+      button.addEventListener('click', () => closeModal(button.dataset.modal));
+    });
+
+    [dom.activateModal, dom.smartModal].forEach(modal => {
+      modal.addEventListener('click', event => {
+        if (event.target === modal) closeModal(modal.id);
+      });
+    });
+
+    window.addEventListener('beforeunload', saveState);
+    updateContactInfo();
+    loadContactConfig();
+    render();
+  </script>
+</body>
+</html>
