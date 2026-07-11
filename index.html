@@ -338,7 +338,7 @@
             </label>
           </div>
         </div>
-        <label class="mt-3 flex cursor-pointer items-center justify-between rounded-xl border border-gray-100 bg-page px-3 py-2 text-xs font-semibold leading-4 text-muted">
+        <label id="debugInfoToggleLabel" class="mt-3 flex cursor-pointer items-center justify-between rounded-xl border border-gray-100 bg-page px-3 py-2 text-xs font-semibold leading-4 text-muted">
           <span>显示学生基础信息</span>
           <input id="debugInfoToggle" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand" />
         </label>
@@ -371,7 +371,7 @@
             <p id="canvasMeta" class="export-hide text-xs font-medium leading-4 text-soft">6 行 × 6 列，共 36 个座位</p>
           </div>
           <h3 id="exportPrintTitle" class="export-only w-full text-center text-[22px] font-bold leading-8 text-ink">班级座位表</h3>
-          <span id="exportBadge" class="export-hide rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium leading-4 text-brand">智排座</span>
+          <span id="exportBadge" class="export-hide rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium leading-4 text-brand">班主任智能排座</span>
         </div>
         <div id="conflictNotice" class="export-hide hidden"></div>
         <div id="seatCanvas" class="seat-grid-bg min-h-[420px] overflow-auto rounded-xl border border-gray-100 p-4"></div>
@@ -407,65 +407,85 @@
   </div>
 
   <div id="activateModal" class="modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
-    <div class="w-full max-w-4xl rounded-xl bg-white p-6 shadow-2xl">
-      <div class="mb-4 flex items-start justify-between">
-        <div>
-          <h2 class="text-[24px] font-bold leading-8 text-ink">激活专业版</h2>
-          <p class="mt-1 text-sm leading-5 text-muted">专业版适合需要规则排座、轮换和无水印导出的班级场景。</p>
-        </div>
-        <button class="close-modal rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-muted hover:text-ink" data-modal="activateModal">关闭</button>
+    <div class="w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl md:p-8">
+      <div class="mb-6 text-center">
+        <h2 class="text-2xl font-bold text-ink">激活专业版</h2>
+        <p class="mt-1.5 text-sm leading-5 text-muted">从手动排座到智能排座，让班级管理更高效</p>
       </div>
-      <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_320px]">
-        <div class="overflow-hidden rounded-xl border border-gray-100">
-          <div class="grid grid-cols-[1.05fr_1fr_1fr] bg-page text-xs font-bold leading-4 text-soft">
-            <div class="px-4 py-3">功能</div>
-            <div class="px-4 py-3 text-center">免费版</div>
-            <div class="brand-gradient px-4 py-3 text-center text-white">专业版</div>
+
+      <div class="mb-8 grid gap-5 sm:grid-cols-2">
+        <!-- 免费版 -->
+        <div class="relative rounded-2xl border border-gray-200 bg-gray-50/80 p-5 transition-shadow hover:shadow-md">
+          <div class="mb-4 flex items-center justify-between">
+            <h3 class="text-lg font-bold text-ink">免费版</h3>
+            <span class="rounded-full bg-gray-200 px-3 py-1 text-xs font-semibold text-gray-600">基础功能</span>
           </div>
-          <div class="divide-y divide-gray-100 text-sm leading-5">
-            <div class="grid grid-cols-[1.05fr_1fr_1fr] items-center">
-              <div class="px-4 py-3 font-semibold text-ink">Excel 模板</div>
-              <div class="px-4 py-3 text-center text-muted">仅姓名导入</div>
-              <div class="bg-indigo-50 px-4 py-3 text-center font-semibold text-brand">身高、视力、性别、偏好</div>
-            </div>
-            <div class="grid grid-cols-[1.05fr_1fr_1fr] items-center">
-              <div class="px-4 py-3 font-semibold text-ink">排座方式</div>
-              <div class="px-4 py-3 text-center text-muted">手动拖拽</div>
-              <div class="bg-indigo-50 px-4 py-3 text-center font-semibold text-brand">云端智能排座</div>
-            </div>
-            <div class="grid grid-cols-[1.05fr_1fr_1fr] items-center">
-              <div class="px-4 py-3 font-semibold text-ink">座位轮换</div>
-              <div class="px-4 py-3 text-center text-soft">不可用</div>
-              <div class="bg-indigo-50 px-4 py-3 text-center font-semibold text-brand">整排轮换</div>
-            </div>
-            <div class="grid grid-cols-[1.05fr_1fr_1fr] items-center">
-              <div class="px-4 py-3 font-semibold text-ink">图片导出</div>
-              <div class="px-4 py-3 text-center text-muted">普通图，带水印</div>
-              <div class="bg-indigo-50 px-4 py-3 text-center font-semibold text-brand">高清图，无水印</div>
-            </div>
-          </div>
+          <ul class="space-y-3">
+            <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>姓名名单导入</li>
+            <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>一键生成座位表</li>
+            <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>手动拖拽调整</li>
+            <li class="flex items-start gap-2.5 text-sm text-amber-700"><svg class="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>图片导出（带水印）</li>
+            <li class="flex items-start gap-2.5 text-sm text-gray-400"><svg class="mt-0.5 h-4 w-4 shrink-0 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>学生信息展示</li>
+            <li class="flex items-start gap-2.5 text-sm text-gray-400"><svg class="mt-0.5 h-4 w-4 shrink-0 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>智能算法排座</li>
+            <li class="flex items-start gap-2.5 text-sm text-gray-400"><svg class="mt-0.5 h-4 w-4 shrink-0 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>整排轮换 / 整列左移</li>
+            <li class="flex items-start gap-2.5 text-sm text-gray-400"><svg class="mt-0.5 h-4 w-4 shrink-0 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>冲突同桌提醒</li>
+          </ul>
         </div>
-        <div class="rounded-xl border border-indigo-100 bg-gradient-to-b from-indigo-50 to-white p-4 text-center">
-          <p class="text-sm font-bold leading-5 text-ink">扫码添加客服</p>
-          <div id="contactQrBox" class="mx-auto mt-3 flex h-60 w-60 items-center justify-center rounded-xl border border-dashed border-indigo-200 bg-white text-xs font-medium leading-4 text-soft shadow-sm">
-            <span>微信二维码</span>
+
+        <!-- 专业版 -->
+        <div class="relative overflow-hidden rounded-2xl border-2 border-indigo-500 bg-gradient-to-br from-indigo-500 to-purple-600 p-[1px] shadow-lg shadow-indigo-200/60">
+          <div class="h-full rounded-[15px] bg-white p-5">
+            <div class="mb-4 flex items-center justify-between">
+              <h3 class="text-lg font-bold text-brand">专业版</h3>
+              <span class="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-brand">推荐升级</span>
+            </div>
+            <ul class="space-y-3">
+              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="font-medium">专业模板导入</span><span class="text-xs text-muted">（性别/身高/视力/成绩）</span></li>
+              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="font-medium">云端智能排座</span></li>
+              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>男左女右 / 女左男右</li>
+              <li class="flex items-start gap-2.5 text-sm text-green-700"><svg class="mt-0.5 h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="font-medium">高清图片导出 · 无水印</span></li>
+              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>学生信息展示</li>
+              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>整排轮换 / 整列左移</li>
+              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>冲突同桌、爱讲话提醒</li>
+              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>一键拖拽调整</li>
+            </ul>
           </div>
-          <p class="mt-3 text-xs font-medium leading-4 text-muted">添加时备注“排座工具”，并说明你遇到的问题。</p>
-          <p id="contactWechatText" class="mt-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold leading-4 text-brand shadow-sm">微信号：请在代码中填写</p>
-          <p class="mt-2 text-[11px] font-medium leading-4 text-soft">每个激活码最多可绑定 3 台设备。</p>
         </div>
       </div>
-      <div class="mt-4 grid gap-3 md:grid-cols-[0.9fr_1.1fr_auto]">
-        <input id="modalUserInput" type="text" class="w-full rounded-xl border border-gray-200 bg-page px-4 py-3 text-sm leading-5 text-ink outline-none placeholder:text-soft focus:border-brand focus:bg-white focus:ring-4 focus:ring-indigo-100" placeholder="手机号或邮箱，用于绑定设备" />
-        <input id="modalCodeInput" type="text" class="w-full rounded-xl border border-gray-200 bg-page px-4 py-3 text-sm uppercase leading-5 text-ink outline-none placeholder:text-soft focus:border-brand focus:bg-white focus:ring-4 focus:ring-indigo-100" placeholder="输入兑换码，例如 PRO-8X92-A1B3" />
-        <button id="modalActivateBtn" class="brand-gradient flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold leading-5 text-white shadow-sm hover:shadow-lift">
-          <span>立即激活</span>
-          <svg id="successIcon" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none">
-            <path class="checkmark" d="M5 12.5l4.4 4.2L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </button>
+
+      <!-- 底部：客服二维码 + 激活栏（两栏高度匹配，右侧垂直居中） -->
+      <div class="mt-6 flex flex-col gap-5 rounded-xl border border-gray-100 bg-gray-50/80 p-5 sm:flex-row sm:items-stretch">
+        <!-- 左：客服二维码 -->
+        <div class="flex shrink-0 flex-col items-center justify-center rounded-lg bg-white px-5 py-3 shadow-sm">
+          <div id="contactQrBox" class="flex h-32 w-32 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white text-[11px] text-soft">
+            微信二维码
+          </div>
+          <p id="contactWechatText" class="mt-2 text-xs font-semibold text-brand">微信号: ayjb13140</p>
+          <p class="mt-0.5 text-[11px] text-muted">添加备注"排座工具"</p>
+        </div>
+
+        <!-- 右：激活输入（垂直居中填满高度） -->
+        <div class="flex min-w-0 flex-1 flex-col justify-center gap-3">
+          <div>
+            <p class="text-sm font-bold text-ink">输入兑换码激活专业版</p>
+            <p class="mt-0.5 text-[11px] leading-4 text-muted">一个兑换码最多绑定 3 台设备，同一设备重复激活不占用额外名额。</p>
+          </div>
+          <input id="modalUserInput" type="text" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm leading-5 text-ink outline-none placeholder:text-soft focus:border-brand focus:ring-2 focus:ring-indigo-100" placeholder="手机号或邮箱，用于绑定设备" />
+          <div class="flex gap-2.5">
+            <input id="modalCodeInput" type="text" class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm uppercase leading-5 text-ink outline-none placeholder:text-soft focus:border-brand focus:ring-2 focus:ring-indigo-100" placeholder="兑换码，如 PRO-8X92-A1B3" />
+            <button id="modalActivateBtn" class="brand-gradient shrink-0 rounded-lg px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:shadow-lift">
+              立即激活
+              <svg id="successIcon" class="hidden ml-1 inline h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <path class="checkmark" d="M5 12.5l4.4 4.2L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
-      <p class="mt-3 text-xs font-medium leading-4 text-soft">一个兑换码最多可绑定 3 台设备；同一设备重复激活不会重复占用名额。</p>
+
+      <button class="close-modal absolute top-4 right-4 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600" data-modal="activateModal">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
     </div>
   </div>
 
@@ -613,6 +633,7 @@
       smartUploadInput: document.getElementById('smartUploadInput'),
       smartRuleInputs: [...document.querySelectorAll('.smart-rule-input')],
       genderPositionOptions: document.getElementById('genderPositionOptions'),
+      debugInfoToggleLabel: document.getElementById('debugInfoToggleLabel'),
       debugInfoToggle: document.getElementById('debugInfoToggle'),
       contactQrBox: document.getElementById('contactQrBox'),
       contactWechatText: document.getElementById('contactWechatText'),
@@ -912,6 +933,12 @@
       dom.smartActivateBtn.textContent = pro.isPro ? '已激活，可上传模板生成座位' : '激活后使用云端智能排座';
       dom.smartActivateBtn.disabled = pro.isPro;
       dom.smartActivateBtn.classList.toggle('opacity-60', pro.isPro);
+      dom.debugInfoToggleLabel.classList.toggle('hidden', !pro.isPro);
+      dom.debugInfoToggle.disabled = !pro.isPro;
+      if (!pro.isPro) {
+        dom.debugInfoToggle.checked = false;
+        appState.showDebugInfo = false;
+      }
       dom.smartRuleInputs.forEach(input => {
         input.disabled = !pro.isPro;
         input.closest('.smart-rule').classList.toggle('opacity-45', !pro.isPro);
@@ -1871,7 +1898,7 @@
     function downloadTemplate() {
       const rows = [
         ['姓名', '性别', '身高(cm)', '视力', '名次', '是否近视', '是否爱讲话', '希望同桌', '不想同桌', '', '使用说明'],
-        ['张一', '男', 138, 4.5, 18, '是', '否', '', '李二', '', '此表用于智排座专业版智能排座。请保留第一行表头，至少填写“姓名”；身高、视力、性别、名次、冲突和偏好字段越完整，排座越准确。'],
+        ['张一', '男', 138, 4.5, 18, '是', '否', '', '李二', '', '此表用于班主任智能排座专业版智能排座。请保留第一行表头，至少填写“姓名”；身高、视力、性别、名次、冲突和偏好字段越完整，排座越准确。'],
         ['李二', '女', 151, 5.0, 6, '否', '否', '', '张一', '', ''],
         ['王三', '男', 145, 4.7, 29, '是', '是', '', '赵四', '', ''],
         ['赵四', '女', 160, 4.9, 4, '否', '否', '孙五', '王三', '', ''],
@@ -1897,7 +1924,7 @@
       sheet['!merges'] = [{ s: { r: 1, c: 10 }, e: { r: 4, c: 10 } }];
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, sheet, '专业版模板');
-      XLSX.writeFile(workbook, '智排座专业版模板.xlsx');
+      XLSX.writeFile(workbook, '班主任智能排座专业版模板.xlsx');
     }
 
     function downloadRosterTemplate() {
@@ -1908,14 +1935,62 @@
 
       const rows = [
         ['姓名'],
-        ['张三'],
-        ['李四'],
-        ['王五']
+        ['张一'],
+        ['李二'],
+        ['王三'],
+        ['赵四'],
+        ['孙五'],
+        ['周六'],
+        ['吴七'],
+        ['郑八'],
+        ['冯九'],
+        ['陈十'],
+        ['杨十一'],
+        ['朱十二'],
+        ['秦十三'],
+        ['何十四'],
+        ['吕十五'],
+        ['高十六'],
+        ['林十七'],
+        ['徐十八'],
+        ['马十九'],
+        ['胡二十'],
+        ['袁二一'],
+        ['宋二二'],
+        ['梁二三'],
+        ['杜二四'],
+        ['谢二五'],
+        ['潘二六'],
+        ['邓二七'],
+        ['曹二八'],
+        ['郭二九'],
+        ['魏三十'],
+        ['苏三五'],
+        ['董三二'],
+        ['韩二七'],
+        ['范三六'],
+        ['罗二二'],
+        ['唐二六']
       ];
       const sheet = XLSX.utils.aoa_to_sheet(rows);
+      sheet['!cols'] = [{ wch: 16 }];
+      sheet['!rows'] = rows.map((_, index) => ({ hpt: index === 0 ? 26 : 22 }));
+      sheet['A1'].s = {
+        fill: { fgColor: { rgb: '4F46E5' } },
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        alignment: { horizontal: 'center', vertical: 'center' }
+      };
+      for (let rowIndex = 2; rowIndex <= rows.length; rowIndex++) {
+        const cell = sheet[`A${rowIndex}`];
+        if (cell) {
+          cell.s = {
+            alignment: { horizontal: 'center', vertical: 'center' }
+          };
+        }
+      }
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, sheet, '学生名单');
-      XLSX.writeFile(workbook, '智排座名单导入模板.xlsx');
+      XLSX.utils.book_append_sheet(workbook, sheet, '免费版测试名单');
+      XLSX.writeFile(workbook, '班主任智能排座名单导入模板.xlsx');
     }
 
     async function callSmartSeating(studentDetails) {
@@ -2067,6 +2142,28 @@
       return exportNode;
     }
 
+    function addFreeWatermarkToExportNode(exportNode) {
+      exportNode.style.position = 'fixed';
+      exportNode.style.overflow = 'hidden';
+
+      const centerMark = document.createElement('div');
+      centerMark.textContent = '班主任智能排座 免费版';
+      centerMark.style.cssText = [
+        'position:absolute',
+        'left:50%',
+        'top:50%',
+        'z-index:60',
+        'pointer-events:none',
+        'transform:translate(-50%, -50%) rotate(-18deg)',
+        'color:rgba(79, 70, 229, 0.08)',
+        'font-size:68px',
+        'font-weight:900',
+        'white-space:nowrap'
+      ].join(';');
+
+      exportNode.appendChild(centerMark);
+    }
+
     async function exportImage() {
       syncSeatsFromDOM();
       const isPro = getProStatus().isPro;
@@ -2077,6 +2174,7 @@
       if (cleanTitle) localStorage.setItem('smart-seating-export-title-v1', cleanTitle);
       dom.exportPrintTitle.textContent = cleanTitle ? `${cleanTitle} 班级座位表` : '班级座位表';
       const exportNode = prepareCleanExportNode();
+      if (!isPro) addFreeWatermarkToExportNode(exportNode);
       document.body.appendChild(exportNode);
 
       try {
@@ -2085,24 +2183,8 @@
           backgroundColor: '#FFFFFF'
         });
 
-        if (!isPro) {
-          const context = canvas.getContext('2d');
-          context.save();
-          context.globalAlpha = 0.18;
-          context.fillStyle = '#4F46E5';
-          context.font = 'bold 42px Inter, sans-serif';
-          context.translate(canvas.width / 2, canvas.height / 2);
-          context.rotate(-Math.PI / 8);
-          for (let y = -canvas.height; y < canvas.height; y += 190) {
-            for (let x = -canvas.width; x < canvas.width; x += 340) {
-              context.fillText('智排座', x, y);
-            }
-          }
-          context.restore();
-        }
-
         const link = document.createElement('a');
-        link.download = isPro ? '智排座-高清座位表.png' : '智排座-普通座位表.png';
+        link.download = isPro ? '班主任智能排座-高清座位表.png' : '班主任智能排座-普通座位表.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
         showToast(isPro ? '高清图片已导出' : '普通图片已导出，已添加水印');
