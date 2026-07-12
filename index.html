@@ -666,7 +666,7 @@
     // 1. 校验兑换码是否有效；2. 按 account + client_id 绑定设备；
     // 3. 同一兑换码最多绑定 MAX_BOUND_DEVICES 台设备；4. 老设备重复激活允许通过。
     const ACTIVATION_FUNCTION_URL = 'https://awzjrlvqwlprrqrfybfi.supabase.co/functions/v1/activate-code';
-    const MAX_BOUND_DEVICES = 3;
+    const MAX_BOUND_DEVICES = 2;
     // 售后联系方式配置接口：建议由 Edge Function 返回 { wechat_id, qr_image_url }，方便后台更新。
     const CONTACT_CONFIG_FUNCTION_URL = 'https://awzjrlvqwlprrqrfybfi.supabase.co/functions/v1/contact-config';
     const CONTACT_WECHAT_ID = '请填写你的微信号';
