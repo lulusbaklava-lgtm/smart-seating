@@ -533,44 +533,56 @@
             </div>
             <div class="min-w-0 flex-1">
               <p class="text-base font-semibold text-ink">微信扫码，购买兑换码</p>
-              <p class="mt-2 text-sm leading-relaxed text-muted">添加客服微信 <span id="contactWechatText" class="font-bold text-brand tracking-wide">ayjb13140</span>，备注「智能排座」即可获取</p>
+              <p class="mt-2 text-sm leading-relaxed text-muted">添加客服微信 <span id="contactWechatText" class="font-bold text-brand tracking-wide">ayjb13140</span>，备注「智能排座」，发送<strong>购买</strong>即可</p>
             </div>
           </div>
           <!-- 第二步：输入兑换码激活 -->
-          <div class="flex flex-col gap-3 border-t border-gray-100 bg-white px-5 py-4 sm:flex-row sm:items-center">
-            <span class="shrink-0 text-sm font-semibold text-ink whitespace-nowrap">已有兑换码？</span>
-            <div class="flex min-w-0 flex-1 items-center gap-2">
-              <input id="modalUserInput" type="text" class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-ink outline-none placeholder:text-soft focus:border-brand focus:ring-2 focus:ring-indigo-100" placeholder="手机号或邮箱" />
-              <input id="modalCodeInput" type="text" class="w-36 shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm uppercase text-ink outline-none placeholder:text-soft focus:border-brand focus:ring-2 focus:ring-indigo-100" placeholder="兑换码" />
-              <button id="modalActivateBtn" class="shrink-0 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow hover:bg-indigo-700 hover:shadow-md active:scale-[0.97] transition-all">
-                立即激活
-                <svg id="successIcon" class="hidden ml-0.5 inline h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <path class="checkmark" d="M5 12.5l4.4 4.2L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
+          <div class="border-t border-gray-100 bg-white px-5 py-4">
+            <p class="mb-3 text-sm font-semibold text-ink">填写信息，激活兑换码</p>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div class="flex min-w-0 flex-1 items-center gap-2">
+                <input id="modalUserInput" type="text" class="input-validate min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-soft focus:border-brand focus:ring-2 focus:ring-indigo-100" placeholder="手机号或邮箱" data-validate="account" />
+                <input id="modalCodeInput" type="text" class="input-validate w-36 shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm uppercase text-ink outline-none transition-colors placeholder:text-soft focus:border-brand focus:ring-2 focus:ring-indigo-100" placeholder="兑换码" data-validate="code" />
+                <button id="modalActivateBtn" class="shrink-0 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow hover:bg-indigo-700 hover:shadow-md active:scale-[0.97] transition-all">
+                  立即激活
+                  <svg id="successIcon" class="hidden ml-0.5 inline h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <path class="checkmark" d="M5 12.5l4.4 4.2L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
             </div>
+            <p id="inputFeedback" class="mt-2 hidden text-xs text-red-500"></p>
           </div>
         </div>
 
         <details class="mt-3 group">
-          <summary class="cursor-pointer list-none py-2 text-center text-xs font-medium text-muted transition-colors hover:text-brand">
+          <summary class="cursor-pointer list-none py-2.5 text-center text-xs font-medium text-muted transition-colors hover:text-brand">
             <span class="inline-flex items-center gap-1">
               <svg class="h-3 w-3 transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-              数据安全吗 · 换电脑怎么办 · 有效期多久
+              常见问题
             </span>
           </summary>
-          <div class="mt-2 grid gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4 text-xs leading-relaxed text-muted sm:grid-cols-3">
-            <div>
-              <p class="mb-1 font-semibold text-ink">🔒 数据安全</p>
-              <p>名单和座位表保存在<strong>本机浏览器</strong>，不上传。智能排座仅发送基础信息给云端。</p>
+          <div class="mt-2 space-y-2.5 rounded-xl border border-gray-100 bg-gray-50/70 p-4">
+            <div class="flex gap-3 pb-2.5 border-b border-gray-100 last:border-0 last:pb-0">
+              <span class="mt-0.5 shrink-0 text-base">🔒</span>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-ink">数据存在哪里？安全吗？</p>
+                <p class="mt-1 text-sm leading-relaxed text-muted">名单和座位表全部保存在<strong>本机浏览器</strong>，不上传任何服务器。智能排座仅发送脱敏基础信息给云端算法，处理完即丢弃。</p>
+              </div>
             </div>
-            <div>
-              <p class="mb-1 font-semibold text-ink">🖥️ 换电脑</p>
-              <p>一个码绑定 ≤<strong>3 台设备</strong>。扫码联系客服，提供兑换码+手机号即可重置。</p>
+            <div class="flex gap-3 pb-2.5 border-b border-gray-100 last:border-0 last:pb-0">
+              <span class="mt-0.5 shrink-0 text-base">🖥️</span>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-ink">换电脑了怎么办？</p>
+                <p class="mt-1 text-sm leading-relaxed text-muted">一个兑换码最多绑定 <strong>3 台设备</strong>。换电脑后扫码联系客服，提供兑换码和绑定手机号，客服即可帮你重置设备。</p>
+              </div>
             </div>
-            <div>
-              <p class="mb-1 font-semibold text-ink">⏰ 有效期</p>
-              <p><strong>年卡版</strong>365天有效；<strong>长期版</strong>永久有效。激活后右上角查看。</p>
+            <div class="flex gap-3">
+              <span class="mt-0.5 shrink-0 text-base">⏰</span>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-ink">有效期是多久？</p>
+                <p class="mt-1 text-sm leading-relaxed text-muted"><strong>年卡版</strong>：激活日起 365 天有效。<br><strong>长期版</strong>：永久有效。到期时间可在页面右上角查看。</p>
+              </div>
             </div>
           </div>
         </details>
@@ -2465,6 +2477,58 @@
       }
     });
     dom.modalActivateBtn.addEventListener('click', () => activateWithCode(dom.modalCodeInput.value));
+
+    // 实时验证：手机号/邮箱（blur 时校验，输入时清除错误）
+    const phoneRe = /^1[3-9]\d{9}$/;
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const codeRe = /^PRO-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+    const lifetimeCodeRe = /^PRO-LIFETIME-[A-Z0-9]{8}$/;
+    const feedbackEl = document.getElementById('inputFeedback');
+
+    function clearInputState(el) {
+      el.classList.remove('border-red-400', 'border-green-500', 'bg-red-50');
+      el.classList.add('border-gray-200');
+    }
+    function markInputError(el, msg) {
+      el.classList.remove('border-gray-200', 'border-green-500');
+      el.classList.add('border-red-400', 'bg-red-50');
+      if (feedbackEl) { feedbackEl.textContent = msg; feedbackEl.classList.remove('hidden'); }
+    }
+    function markInputOk(el) {
+      el.classList.remove('border-gray-200', 'border-red-400', 'bg-red-50');
+      el.classList.add('border-green-500');
+      if (feedbackEl) { feedbackEl.classList.add('hidden'); }
+    }
+
+    dom.modalUserInput.addEventListener('blur', function() {
+      const v = this.value.trim();
+      if (!v) { clearInputState(this); if (feedbackEl) feedbackEl.classList.add('hidden'); return; }
+      if (!phoneRe.test(v) && !emailRe.test(v)) {
+        markInputError(this, '请输入正确的 11 位手机号或邮箱格式');
+      } else {
+        markInputOk(this);
+      }
+    });
+    dom.modalUserInput.addEventListener('input', function() {
+      if (this.classList.contains('border-red-400')) clearInputState(this);
+      if (feedbackEl && !dom.modalCodeInput.classList.contains('border-red-400')) feedbackEl.classList.add('hidden');
+    });
+
+    // 兑换码实时验证
+    dom.modalCodeInput.addEventListener('blur', function() {
+      const v = this.value.trim().toUpperCase();
+      if (!v) { clearInputState(this); return; }
+      if (!codeRe.test(v) && !lifetimeCodeRe.test(v)) {
+        markInputError(this, '兑换码格式不正确，请核对后重新输入');
+      } else {
+        this.value = v; // 自动大写
+        markInputOk(this);
+      }
+    });
+    dom.modalCodeInput.addEventListener('input', function() {
+      if (this.classList.contains('border-red-400')) clearInputState(this);
+      if (feedbackEl && !dom.modalUserInput.classList.contains('border-red-400')) feedbackEl.classList.add('hidden');
+    });
     dom.downloadTemplateBtn.addEventListener('click', downloadTemplate);
     dom.smartActivateBtn.addEventListener('click', () => {
       closeModal('smartModal');
