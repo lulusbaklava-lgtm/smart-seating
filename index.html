@@ -707,6 +707,7 @@
       try {
         const pro = JSON.parse(localStorage.getItem(proKey));
         if (!pro || !pro.isPro) return { isPro: false };
+        if (pro.isLifetime) return pro;
         if (pro.proExpiry && new Date(pro.proExpiry).getTime() < Date.now()) {
           localStorage.removeItem(proKey);
           return { isPro: false };
@@ -729,6 +730,19 @@
     }
 
     function setProStatus(days = 365, activation = {}) {
+      const isLifetime = activation.isLifetime === true || activation.is_lifetime === true;
+      if (isLifetime) {
+        localStorage.setItem(proKey, JSON.stringify({
+          isPro: true,
+          isLifetime: true,
+          proExpiry: '',
+          activationAccount: activation.account || '',
+          activationDeviceId: activation.deviceId || getClientDeviceId(),
+          maxDevices: activation.maxDevices || MAX_BOUND_DEVICES
+        }));
+        return;
+      }
+
       const expires = activation.expiresAt || activation.proExpiry
         ? new Date(activation.expiresAt || activation.proExpiry)
         : new Date();
@@ -931,7 +945,7 @@
 
     function updateProUI() {
       const pro = getProStatus();
-      dom.planBadge.textContent = pro.isPro ? '专业版' : '基础班';
+      dom.planBadge.textContent = pro.isPro ? (pro.isLifetime ? '专业长期版' : '专业版') : '基础班';
       dom.planBadge.className = pro.isPro
         ? 'rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-emerald-200/40'
         : 'rounded-full bg-white/16 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-white/22';
@@ -1869,7 +1883,8 @@
           account,
           deviceId,
           maxDevices: result.max_devices || MAX_BOUND_DEVICES,
-          expiresAt: result.expires_at || result.proExpiry
+          expiresAt: result.expires_at || result.proExpiry,
+          isLifetime: result.isLifetime === true || result.is_lifetime === true
         });
         showActivationSuccess();
       } catch (error) {
@@ -2039,6 +2054,7 @@
           },
           body: JSON.stringify({
             isPro: proStatus.isPro,
+            isLifetime: proStatus.isLifetime === true,
             proExpiry: proStatus.proExpiry,
             account: proStatus.activationAccount,
             deviceId: proStatus.activationDeviceId || getClientDeviceId(),
