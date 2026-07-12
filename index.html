@@ -524,24 +524,25 @@
           </div>
         </div>
 
-        <!-- 激活区 — 紧凑横排 -->
-        <div class="mt-5 flex flex-wrap items-center gap-4 rounded-xl border border-gray-100 bg-slate-50/70 px-4 py-3.5">
-          <div class="flex shrink-0 items-center gap-3">
-            <div id="contactQrBox" class="shrink-0 rounded-lg border border-dashed border-gray-200 bg-white" style="width:80px;height:80px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#9aa4b2;">
+        <!-- 激活区 — 两步式：先买码，再激活 -->
+        <div class="mt-5 overflow-hidden rounded-xl border border-gray-200">
+          <!-- 第一步：购买兑换码 -->
+          <div class="flex items-center gap-4 bg-gradient-to-r from-indigo-50 via-indigo-50/40 to-white px-4 py-3.5">
+            <div id="contactQrBox" class="shrink-0 rounded-xl border-2 border-white bg-white shadow-sm" style="width:68px;height:68px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#9aa4b2;">
               二维码
             </div>
-            <div class="text-left leading-tight">
-              <p id="contactWechatText" class="text-xs font-bold text-brand">ayjb13140</p>
-              <p class="text-[10px] text-muted">备注「智能排座」</p>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-ink">微信扫码，购买兑换码</p>
+              <p class="mt-1 text-xs leading-relaxed text-muted">添加客服 <span id="contactWechatText" class="font-medium text-brand">ayjb13140</span>，备注「智能排座」即可获取</p>
             </div>
           </div>
-          <div class="h-10 w-px hidden sm:block bg-gray-200"></div>
-          <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-            <p class="text-[11px] text-muted">扫码联系客服获取兑换码 → 填写下方信息激活</p>
-            <div class="flex items-end gap-2">
-              <input id="modalUserInput" type="text" class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-ink outline-none placeholder:text-soft focus:border-brand focus:ring-1 focus:ring-indigo-200" placeholder="手机号或邮箱" />
-              <input id="modalCodeInput" type="text" class="w-36 shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm uppercase text-ink outline-none placeholder:text-soft focus:border-brand focus:ring-1 focus:ring-indigo-200" placeholder="兑换码" />
-              <button id="modalActivateBtn" class="shrink-0 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-bold text-white hover:bg-indigo-700 active:scale-[0.97] transition-transform">
+          <!-- 第二步：输入兑换码激活 -->
+          <div class="flex flex-col gap-2.5 border-t border-gray-100 bg-white px-4 py-3.5 sm:flex-row sm:items-center">
+            <span class="shrink-0 text-sm font-medium text-ink">已有兑换码？</span>
+            <div class="flex min-w-0 flex-1 items-center gap-2">
+              <input id="modalUserInput" type="text" class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-ink outline-none placeholder:text-soft focus:border-brand focus:ring-2 focus:ring-indigo-100" placeholder="手机号或邮箱" />
+              <input id="modalCodeInput" type="text" class="w-32 shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm uppercase text-ink outline-none placeholder:text-soft focus:border-brand focus:ring-2 focus:ring-indigo-100" placeholder="兑换码" />
+              <button id="modalActivateBtn" class="shrink-0 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-bold text-white shadow-sm hover:bg-indigo-700 hover:shadow active:scale-[0.97] transition-all">
                 立即激活
                 <svg id="successIcon" class="hidden ml-0.5 inline h-4 w-4" viewBox="0 0 24 24" fill="none">
                   <path class="checkmark" d="M5 12.5l4.4 4.2L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
