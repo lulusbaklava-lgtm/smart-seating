@@ -238,8 +238,19 @@
           <p class="text-xs font-medium leading-4 text-white/72">班级座位表工具</p>
         </div>
       </div>
-      <div class="flex items-center gap-3">
-        <span id="planBadge" class="rounded-full bg-white/16 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-white/22">基础版</span>
+      <div class="relative flex items-center gap-3">
+        <button id="planBadgeBtn" class="group relative cursor-pointer rounded-full bg-white/16 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-white/22 transition hover:bg-white/25" title="点击查看版本详情">
+          <span id="planBadge">基础版</span>
+          <svg class="ml-1 inline h-3 w-3 opacity-60 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          <!-- 版本详情浮层 -->
+          <div id="planDetailPopup" class="pointer-events-none absolute right-0 top-full z-50 mt-2 hidden w-56 origin-top-right rounded-xl bg-white p-3 shadow-xl ring-1 ring-black/5 transition-all duration-150 scale-95 opacity-0">
+            <div class="space-y-2 text-xs font-medium leading-5">
+              <div class="flex items-center justify-between gap-2"><span class="text-muted">当前版本</span><span id="popupVersionName" class="font-bold text-ink"></span></div>
+              <div class="flex items-center justify-between gap-2"><span class="text-muted">到期日期</span><span id="popupExpiryDate" class="font-bold text-ink"></span></div>
+              <div class="flex items-center justify-between gap-2"><span class="text-muted">已绑定设备</span><span id="popupBoundDevices" class="font-bold text-ink"></span></div>
+            </div>
+          </div>
+        </button>
         <button id="topActivateBtn" class="rounded-xl bg-white px-4 py-2 text-sm font-semibold leading-5 text-brand shadow-sm hover:shadow-lift">激活专业版</button>
       </div>
     </div>
@@ -265,7 +276,6 @@
         </div>
         <button id="downloadRosterTemplateBtn" class="mt-2 w-full rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm font-semibold leading-5 text-brand hover:bg-white hover:shadow-lift">下载名单模板</button>
         <p id="templateHint" class="mt-2 text-xs font-medium leading-4 text-soft">基础版模板只包含姓名列，适合快速导入。</p>
-        <div id="planStatusInfo" class="mt-3 rounded-xl border border-gray-100 bg-page px-3 py-2 text-xs font-medium leading-5 text-muted"></div>
       </section>
 
       <section class="card mt-5 rounded-xl border-t border-gray-100 pt-5">
@@ -419,100 +429,157 @@
   </div>
 
   <div id="activateModal" class="modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
-    <div class="w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl md:p-8">
-      <div class="mb-6 text-center">
-        <h2 class="text-2xl font-bold text-ink">激活专业版</h2>
-        <p class="mt-1.5 text-sm leading-5 text-muted">从手动排座到智能排座，让班级管理更高效</p>
-      </div>
+    <div class="w-full max-w-[720px] rounded-2xl bg-white shadow-2xl md:overflow-hidden md:max-h-[88vh] md:overflow-y-auto">
+      <div class="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
 
-      <div class="mb-8 grid gap-5 sm:grid-cols-2">
-        <!-- 基础版 -->
-        <div class="relative rounded-2xl border border-gray-200 bg-gray-50/80 p-5 transition-shadow hover:shadow-md">
-          <div class="mb-4 flex items-center justify-between">
-            <h3 class="text-lg font-bold text-ink">基础版</h3>
-            <span class="rounded-full bg-gray-200 px-3 py-1 text-xs font-semibold text-gray-600">基础功能</span>
+      <div class="px-6 pt-7 pb-5 sm:px-8 sm:pt-9 sm:pb-6">
+        <div class="mb-6 text-center">
+          <div class="mb-2 inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-brand">
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            解锁全部功能
           </div>
-          <ul class="space-y-3">
-            <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>姓名名单导入</li>
-            <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>一键生成座位表</li>
-            <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>手动拖拽调整</li>
-            <li class="flex items-start gap-2.5 text-sm text-amber-700"><svg class="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>图片导出（带水印）</li>
-            <li class="flex items-start gap-2.5 text-sm text-gray-400"><svg class="mt-0.5 h-4 w-4 shrink-0 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>学生信息展示</li>
-            <li class="flex items-start gap-2.5 text-sm text-gray-400"><svg class="mt-0.5 h-4 w-4 shrink-0 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>智能算法排座</li>
-            <li class="flex items-start gap-2.5 text-sm text-gray-400"><svg class="mt-0.5 h-4 w-4 shrink-0 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>整排轮换 / 整列左移</li>
-            <li class="flex items-start gap-2.5 text-sm text-gray-400"><svg class="mt-0.5 h-4 w-4 shrink-0 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>冲突同桌提醒</li>
-          </ul>
+          <h2 class="text-xl font-bold text-ink sm:text-2xl">激活专业版</h2>
+          <p class="mt-1 text-sm text-muted">从手动排座升级到智能排座，让班级管理更轻松</p>
         </div>
 
-        <!-- 专业版 -->
-        <div class="relative overflow-hidden rounded-2xl border-2 border-indigo-500 bg-gradient-to-br from-indigo-500 to-purple-600 p-[1px] shadow-lg shadow-indigo-200/60">
-          <div class="h-full rounded-[15px] bg-white p-5">
-            <div class="mb-4 flex items-center justify-between">
-              <h3 class="text-lg font-bold text-brand">专业版</h3>
-              <span class="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-brand">推荐升级</span>
+        <div class="grid gap-3 sm:grid-cols-2" style="align-items:start;">
+          <!-- 基础版 -->
+          <div class="rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-300 hover:shadow-sm">
+            <div class="mb-4 flex items-baseline justify-between">
+              <h3 class="text-base font-bold text-ink">基础版</h3>
+              <span class="text-sm font-semibold text-gray-400">免费</span>
             </div>
             <ul class="space-y-3">
-              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="font-medium">专业模板导入</span><span class="text-xs text-muted">（性别/身高/视力/成绩）</span></li>
-              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="font-medium">云端智能排座</span></li>
-              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>男左女右 / 女左男右</li>
-              <li class="flex items-start gap-2.5 text-sm text-green-700"><svg class="mt-0.5 h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="font-medium">高清图片导出 · 无水印</span></li>
-              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>学生信息展示</li>
-              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>整排轮换 / 整列左移</li>
-              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>冲突同桌、爱讲话提醒</li>
-              <li class="flex items-start gap-2.5 text-sm text-ink"><svg class="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>一键拖拽调整</li>
+              <li class="flex items-start gap-2.5 text-sm">
+                <svg class="mt-0.5 h-[18px] w-[18px] shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                <span class="text-ink">导入名单</span><span class="ml-1 text-xs text-muted">仅姓名</span>
+              </li>
+              <li class="flex items-start gap-2.5 text-sm">
+                <svg class="mt-0.5 h-[18px] w-[18px] shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                <span class="text-ink">手动排座</span>
+              </li>
+              <li class="flex items-start gap-2.5 text-sm">
+                <svg class="mt-0.5 h-[18px] w-[18px] shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="text-ink">导出图片</span><span class="ml-1 text-xs text-amber-500">带水印</span>
+              </li>
+            </ul>
+            <div class="my-4 h-px bg-gray-100"></div>
+            <ul class="space-y-2.5 opacity-40">
+              <li class="flex items-center gap-2.5 text-sm text-gray-500">
+                <svg class="h-[16px] w-[16px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                AI 智能排座
+              </li>
+              <li class="flex items-center gap-2.5 text-sm text-gray-500">
+                <svg class="h-[16px] w-[16px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                无水印高清导出
+              </li>
+              <li class="flex items-center gap-2.5 text-sm text-gray-500">
+                <svg class="h-[16px] w-[16px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                学生信息 / 冲突提醒 / 同桌偏好
+              </li>
+            </ul>
+          </div>
+
+          <!-- 专业版 -->
+          <div class="relative rounded-xl border-2 border-indigo-400 bg-gradient-to-b from-indigo-50/50 to-white p-5 shadow-lg shadow-indigo-100/30 ring-1 ring-indigo-100/40">
+            <div class="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 px-3.5 py-0.5 text-[10px] font-bold text-white shadow-sm whitespace-nowrap">✨ 推荐升级</div>
+
+            <div class="mb-4 flex items-baseline justify-between">
+              <div>
+                <h3 class="text-base font-bold text-brand">专业版</h3>
+                <p class="mt-0.5 text-[10px] leading-tight text-muted">年卡 365天 / 长期永久，激活时自动识别</p>
+              </div>
+            </div>
+            <ul class="space-y-3">
+              <li class="flex items-start gap-2.5 text-sm">
+                <svg class="mt-0.5 h-[18px] w-[18px] shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                <div><span class="font-semibold text-ink">专业模板导入</span><span class="ml-1 text-xs text-muted">姓名·性别·身高·视力·名次<br class="hidden sm:block"/>+ 近视/爱讲话/同桌偏好等 9 项字段</span></div>
+              </li>
+              <li class="flex items-start gap-2.5 text-sm">
+                <svg class="mt-0.5 h-[18px] w-[18px] shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                <div><span class="font-semibold text-ink">AI 智能排座</span><span class="ml-1 text-xs text-muted">云端算法自动生成最优座位方案</span></div>
+              </li>
+              <li class="flex items-start gap-2.5 text-sm">
+                <svg class="mt-0.5 h-[18px] w-[18px] shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                <div><span class="font-bold text-green-700">高清无水印导出</span></div>
+              </li>
+            </ul>
+            <div class="my-4 h-px bg-gradient-to-r from-transparent via-indigo-200 to-transparent"></div>
+            <ul class="space-y-2.5 text-sm text-ink">
+              <li class="flex items-center gap-2.5">
+                <svg class="h-[16px] w-[16px] shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                一键生成 + 手动微调
+              </li>
+              <li class="flex items-center gap-2.5">
+                <svg class="h-[16px] w-[16px] shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                学生信息卡 + 冲突/爱讲话提醒
+              </li>
+              <li class="flex items-center gap-2.5">
+                <svg class="h-[16px] w-[16px] shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                批量轮换 / 整列移动
+              </li>
             </ul>
           </div>
         </div>
+
+        <div class="mt-6 overflow-hidden rounded-xl border border-gray-100 bg-gradient-to-br from-slate-50 to-indigo-50/20 p-4 sm:p-5">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+            <div class="flex shrink-0 flex-col items-center">
+              <div id="contactQrBox" class="flex items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white text-xs text-soft" style="width:106px;height:106px">
+                微信二维码
+              </div>
+              <div class="mt-1.5 text-center">
+                <p id="contactWechatText" class="text-xs font-bold text-brand">ayjb13140</p>
+                <p class="text-[10px] text-muted">备注「智能排座」</p>
+              </div>
+            </div>
+            <div class="flex min-w-0 flex-1 flex-col justify-center gap-2.5">
+              <label class="text-sm font-semibold text-ink">填写联系方式和兑换码</label>
+              <div class="flex gap-2">
+                <input id="modalUserInput" type="text" class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-ink outline-none placeholder:text-soft focus:border-brand focus:ring-2 focus:ring-indigo-100" placeholder="手机号或邮箱" />
+                <input id="modalCodeInput" type="text" class="w-44 shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm uppercase text-ink outline-none placeholder:text-soft focus:border-brand focus:ring-2 focus:ring-indigo-100" placeholder="兑换码" />
+              </div>
+              <div class="flex items-center gap-3">
+                <button id="modalActivateBtn" class="brand-gradient rounded-lg px-7 py-2.5 text-sm font-bold text-white shadow-md hover:shadow-lg active:scale-[0.98]">
+                  立即激活
+                  <svg id="successIcon" class="hidden ml-1 inline h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <path class="checkmark" d="M5 12.5l4.4 4.2L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <details class="mt-3 group">
+          <summary class="cursor-pointer list-none pt-1.5 text-center text-[10px] font-medium text-muted transition-colors hover:text-brand">
+            <span class="inline-flex items-center gap-1">
+              <svg class="h-3 w-3 transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+              数据安全吗 · 换电脑怎么办 · 有效期多久
+            </span>
+          </summary>
+          <div class="mt-2 grid gap-2 rounded-xl border border-gray-100 bg-gray-50/60 p-3 text-[10px] leading-relaxed text-muted sm:grid-cols-3">
+            <div>
+              <p class="mb-0.5 font-semibold text-ink">🔒 数据安全</p>
+              <p>名单和座位表保存在<strong>本机浏览器</strong>，不上传。智能排座仅发送基础信息给云端。</p>
+            </div>
+            <div>
+              <p class="mb-0.5 font-semibold text-ink">🖥️ 换电脑</p>
+              <p>一个码绑定 ≤<strong>3 台设备</strong>。扫码联系客服，提供兑换码+手机号即可重置。</p>
+            </div>
+            <div>
+              <p class="mb-0.5 font-semibold text-ink">⏰ 有效期</p>
+              <p><strong>年卡版</strong>365天有效；<strong>长期版</strong>永久有效。激活后右上角查看。</p>
+            </div>
+          </div>
+        </details>
       </div>
 
-      <!-- 底部：客服二维码 + 激活栏（两栏高度匹配，右侧垂直居中） -->
-      <div class="mt-6 flex flex-col gap-5 rounded-xl border border-gray-100 bg-gray-50/80 p-5 sm:flex-row sm:items-stretch">
-        <!-- 左：客服二维码 -->
-        <div class="flex shrink-0 flex-col items-center justify-center rounded-lg bg-white px-5 py-3 shadow-sm">
-          <div id="contactQrBox" class="flex h-32 w-32 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white text-[11px] text-soft">
-            微信二维码
-          </div>
-          <p id="contactWechatText" class="mt-2 text-xs font-semibold text-brand">微信号: ayjb13140</p>
-          <p class="mt-0.5 text-[11px] text-muted">添加备注"排座工具"</p>
-        </div>
-
-        <!-- 右：激活输入（垂直居中填满高度） -->
-        <div class="flex min-w-0 flex-1 flex-col justify-center gap-3">
-          <div>
-            <p class="text-sm font-bold text-ink">输入兑换码激活专业版</p>
-            <p class="mt-0.5 text-[11px] leading-4 text-muted">一个兑换码最多绑定 3 台设备，同一设备重复激活不占用额外名额。</p>
-          </div>
-          <input id="modalUserInput" type="text" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm leading-5 text-ink outline-none placeholder:text-soft focus:border-brand focus:ring-2 focus:ring-indigo-100" placeholder="手机号或邮箱，用于绑定设备" />
-          <div class="flex gap-2.5">
-            <input id="modalCodeInput" type="text" class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm uppercase leading-5 text-ink outline-none placeholder:text-soft focus:border-brand focus:ring-2 focus:ring-indigo-100" placeholder="兑换码，如 PRO-8X92-A1B3" />
-            <button id="modalActivateBtn" class="brand-gradient shrink-0 rounded-lg px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:shadow-lift">
-              立即激活
-              <svg id="successIcon" class="hidden ml-1 inline h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <path class="checkmark" d="M5 12.5l4.4 4.2L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="mt-4 grid gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3 text-xs leading-5 text-muted md:grid-cols-2">
-        <div>
-          <p class="font-bold text-ink">数据使用说明</p>
-          <p class="mt-1">名单和座位主要保存在本机浏览器；使用智能排座时，会把专业模板中的姓名、性别、身高、视力、名次和同桌偏好发送到云端算法生成座位表。兑换码账号和设备 ID 仅用于授权与设备绑定。</p>
-        </div>
-        <div>
-          <p class="font-bold text-ink">设备解绑售后</p>
-          <p class="mt-1">每个兑换码最多绑定 3 台设备。更换电脑或设备绑定已满时，请联系客服并提供兑换码和绑定账号，售后会核验后重置或解绑设备。</p>
-        </div>
-      </div>
-
-      <button class="close-modal absolute top-4 right-4 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600" data-modal="activateModal">
+      <button class="close-modal absolute top-3.5 right-3.5 z-10 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600" data-modal="activateModal">
         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
-  </div>
-
-      <div id="smartModal" class="modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
+  </div><div id="smartModal" class="modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
     <div class="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl">
       <div class="mb-5 flex items-start justify-between">
         <div>
@@ -636,7 +703,11 @@
       canvasMeta: document.getElementById('canvasMeta'),
       conflictNotice: document.getElementById('conflictNotice'),
       planBadge: document.getElementById('planBadge'),
-      planStatusInfo: document.getElementById('planStatusInfo'),
+      planBadgeBtn: document.getElementById('planBadgeBtn'),
+      planDetailPopup: document.getElementById('planDetailPopup'),
+      popupVersionName: document.getElementById('popupVersionName'),
+      popupExpiryDate: document.getElementById('popupExpiryDate'),
+      popupBoundDevices: document.getElementById('popupBoundDevices'),
       exportBadge: document.getElementById('exportBadge'),
       topActivateBtn: document.getElementById('topActivateBtn'),
       modalUserInput: document.getElementById('modalUserInput'),
@@ -967,19 +1038,27 @@
 
     function updateProUI() {
       const pro = getProStatus();
-      const versionName = pro.isPro ? (pro.isLifetime ? '专业长期版' : '专业版') : '基础版';
+      const versionName = pro.isPro ? (pro.isLifetime ? '专业长期版' : '专业年卡版') : '基础版';
       const expiryText = pro.isPro ? (pro.isLifetime ? '长期有效' : (formatDateOnly(pro.proExpiry) || '未识别')) : '无';
       const maxDevices = pro.maxDevices || MAX_BOUND_DEVICES;
       const boundDevices = pro.isPro ? (pro.boundDevices || pro.bound_devices || '本机') : '0';
       dom.planBadge.textContent = versionName;
-      dom.planBadge.className = pro.isPro
-        ? 'rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-emerald-200/40'
-        : 'rounded-full bg-white/16 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-white/22';
-      dom.planStatusInfo.innerHTML = `
-        <div class="flex items-center justify-between gap-2"><span>当前版本</span><span class="font-bold text-ink">${escapeHTML(versionName)}</span></div>
-        <div class="flex items-center justify-between gap-2"><span>到期日期</span><span class="font-bold text-ink">${escapeHTML(expiryText)}</span></div>
-        <div class="flex items-center justify-between gap-2"><span>已绑定设备数</span><span class="font-bold text-ink">${escapeHTML(String(boundDevices))}/${escapeHTML(String(maxDevices))}</span></div>
-      `;
+      // 更新 header badge 样式（外层按钮）
+      dom.planBadgeBtn.className = pro.isPro
+        ? 'group relative cursor-pointer rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-emerald-200/40 transition hover:bg-emerald-400/30'
+        : 'group relative cursor-pointer rounded-full bg-white/16 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-white/22 transition hover:bg-white/25';
+      // 填充版本详情浮层
+      dom.popupVersionName && (dom.popupVersionName.textContent = versionName);
+      dom.popupExpiryDate && (dom.popupExpiryDate.textContent = expiryText);
+      dom.popupBoundDevices && (dom.popupBoundDevices.textContent = String(boundDevices) + '/' + String(maxDevices));
+      // 专业版才显示浮层交互
+      if (pro.isPro) {
+        dom.planDetailPopup?.classList.remove('hidden');
+        dom.planBadgeBtn.setAttribute('data-pro', 'true');
+      } else {
+        dom.planDetailPopup?.classList.add('hidden');
+        dom.planBadgeBtn.removeAttribute('data-pro');
+      }
       dom.topActivateBtn.classList.toggle('hidden', pro.isPro);
       dom.downloadRosterTemplateBtn.textContent = pro.isPro ? '下载专业模板' : '下载名单模板';
       dom.templateHint.textContent = pro.isPro
@@ -1879,6 +1958,15 @@
       }
       if (!account) {
         showToast('请输入手机号或邮箱，用于绑定设备');
+        dom.modalUserInput.focus();
+        return;
+      }
+      // 验证手机号或邮箱格式
+      const phoneRegex = /^1[3-9]\d{9}$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!phoneRegex.test(account) && !emailRegex.test(account)) {
+        showToast('请输入正确的手机号（11位）或邮箱格式');
+        dom.modalUserInput.focus();
         return;
       }
 
@@ -2348,6 +2436,33 @@
     dom.shiftColumnsLeftBtn.addEventListener('click', shiftColumnsLeft);
     dom.exportBtn.addEventListener('click', exportImage);
     dom.topActivateBtn.addEventListener('click', () => openModal('activateModal'));
+
+    // 版本详情浮层交互：点击切换显示/隐藏，点击外部关闭
+    dom.planBadgeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const popup = dom.planDetailPopup;
+      if (!popup || !dom.planBadgeBtn.getAttribute('data-pro')) return;
+      const isOpen = !popup.classList.contains('hidden') && !popup.classList.contains('opacity-0');
+      if (isOpen) {
+        popup.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => popup.classList.add('hidden'), 150);
+        popup.style.pointerEvents = 'none';
+      } else {
+        popup.classList.remove('hidden');
+        // 强制重绘后添加动画
+        requestAnimationFrame(() => {
+          popup.classList.remove('scale-95', 'opacity-0');
+          popup.style.pointerEvents = 'auto';
+        });
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (dom.planDetailPopup && !dom.planDetailPopup.contains(e.target) && !dom.planBadgeBtn.contains(e.target)) {
+        dom.planDetailPopup.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => { if (dom.planDetailPopup) dom.planDetailPopup.classList.add('hidden'); }, 150);
+        if (dom.planDetailPopup) dom.planDetailPopup.style.pointerEvents = 'none';
+      }
+    });
     dom.modalActivateBtn.addEventListener('click', () => activateWithCode(dom.modalCodeInput.value));
     dom.downloadTemplateBtn.addEventListener('click', downloadTemplate);
     dom.smartActivateBtn.addEventListener('click', () => {
