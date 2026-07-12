@@ -157,6 +157,17 @@
       align-items: center !important;
       justify-content: center !important;
       padding: 0 !important;
+      border-color: #CBD5E1 !important;
+      background: #FFFFFF !important;
+    }
+
+    .export-mode .student-chip {
+      border: 1px solid #D7DEE8 !important;
+    }
+
+    .export-mode .seat-row-label,
+    .export-mode .seat-aisle {
+      border-color: #D7DEE8 !important;
     }
 
     .export-only {
@@ -2164,6 +2175,13 @@
       exportNode.appendChild(centerMark);
     }
 
+    function getExportScale(exportNode, isPro) {
+      if (!isPro) return 1.4;
+      const width = Math.max(1, exportNode.offsetWidth || dom.exportArea.offsetWidth || 1);
+      const min2kScale = 2560 / width;
+      return Math.min(4, Math.max(2.5, min2kScale));
+    }
+
     async function exportImage() {
       syncSeatsFromDOM();
       const isPro = getProStatus().isPro;
@@ -2179,7 +2197,7 @@
 
       try {
         const canvas = await html2canvas(exportNode, {
-          scale: isPro ? 2.5 : 1.4,
+          scale: getExportScale(exportNode, isPro),
           backgroundColor: '#FFFFFF'
         });
 
