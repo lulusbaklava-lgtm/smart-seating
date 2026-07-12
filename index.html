@@ -239,7 +239,7 @@
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <span id="planBadge" class="rounded-full bg-white/16 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-white/22">免费版</span>
+        <span id="planBadge" class="rounded-full bg-white/16 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-white/22">基础班</span>
         <button id="topActivateBtn" class="rounded-xl bg-white px-4 py-2 text-sm font-semibold leading-5 text-brand shadow-sm hover:shadow-lift">激活专业版</button>
       </div>
     </div>
@@ -264,7 +264,7 @@
           </label>
         </div>
         <button id="downloadRosterTemplateBtn" class="mt-2 w-full rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm font-semibold leading-5 text-brand hover:bg-white hover:shadow-lift">下载名单模板</button>
-        <p id="templateHint" class="mt-2 text-xs font-medium leading-4 text-soft">免费模板只包含姓名列，适合快速导入。</p>
+        <p id="templateHint" class="mt-2 text-xs font-medium leading-4 text-soft">基础班模板只包含姓名列，适合快速导入。</p>
       </section>
 
       <section class="card mt-5 rounded-xl border-t border-gray-100 pt-5">
@@ -425,10 +425,10 @@
       </div>
 
       <div class="mb-8 grid gap-5 sm:grid-cols-2">
-        <!-- 免费版 -->
+        <!-- 基础班 -->
         <div class="relative rounded-2xl border border-gray-200 bg-gray-50/80 p-5 transition-shadow hover:shadow-md">
           <div class="mb-4 flex items-center justify-between">
-            <h3 class="text-lg font-bold text-ink">免费版</h3>
+            <h3 class="text-lg font-bold text-ink">基础班</h3>
             <span class="rounded-full bg-gray-200 px-3 py-1 text-xs font-semibold text-gray-600">基础功能</span>
           </div>
           <ul class="space-y-3">
@@ -931,7 +931,7 @@
 
     function updateProUI() {
       const pro = getProStatus();
-      dom.planBadge.textContent = pro.isPro ? '专业版' : '免费版';
+      dom.planBadge.textContent = pro.isPro ? '专业版' : '基础班';
       dom.planBadge.className = pro.isPro
         ? 'rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-emerald-200/40'
         : 'rounded-full bg-white/16 px-3 py-1 text-xs font-medium leading-4 text-white ring-1 ring-white/22';
@@ -939,7 +939,7 @@
       dom.downloadRosterTemplateBtn.textContent = pro.isPro ? '下载专业模板' : '下载名单模板';
       dom.templateHint.textContent = pro.isPro
         ? '专业模板包含身高、视力、性别和同桌偏好，可用于智能排座。'
-        : '免费模板只包含姓名列，适合快速导入。';
+        : '基础班模板只包含姓名列，适合快速导入。';
       dom.exportBadge.textContent = pro.isPro ? '专业版高清导出' : '班主任智能排座';
       dom.smartActivateBtn.textContent = pro.isPro ? '已激活，可上传模板生成座位' : '激活后使用云端智能排座';
       dom.smartActivateBtn.disabled = pro.isPro;
@@ -2000,7 +2000,7 @@
         }
       }
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, sheet, '免费版测试名单');
+      XLSX.utils.book_append_sheet(workbook, sheet, '基础班测试名单');
       XLSX.writeFile(workbook, '班主任智能排座名单导入模板.xlsx');
     }
 
@@ -2158,7 +2158,7 @@
       exportNode.style.overflow = 'hidden';
 
       const centerMark = document.createElement('div');
-      centerMark.textContent = '班主任智能排座 免费版';
+      centerMark.textContent = '班主任智能排座 基础班';
       centerMark.style.cssText = [
         'position:absolute',
         'left:50%',
