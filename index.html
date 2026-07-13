@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     tailwind.config = {
@@ -275,7 +275,7 @@
           </label>
         </div>
         <button id="downloadRosterTemplateBtn" class="mt-2 w-full rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm font-semibold leading-5 text-brand hover:bg-white hover:shadow-lift">下载名单模板</button>
-        <p id="templateHint" class="mt-2 text-xs font-medium leading-4 text-soft">基础版模板只包含姓名列，适合快速导入。</p>
+        <p id="templateHint" class="mt-2 text-xs font-medium leading-4 text-soft">基础版模板含名单示例和填写说明，适合快速导入。</p>
       </section>
 
       <section class="card mt-5 rounded-xl border-t border-gray-100 pt-5">
@@ -1076,7 +1076,7 @@
       dom.downloadRosterTemplateBtn.textContent = pro.isPro ? '下载专业模板' : '下载名单模板';
       dom.templateHint.textContent = pro.isPro
         ? '专业模板包含身高、视力、性别和同桌偏好，可用于智能排座。'
-        : '基础版模板只包含姓名列，适合快速导入。';
+        : '基础版模板含名单示例和填写说明，适合快速导入。';
       dom.exportBadge.textContent = pro.isPro ? '专业版高清导出' : '班主任智能排座';
       dom.smartActivateBtn.textContent = pro.isPro ? '已激活，可上传模板生成座位' : '激活后使用云端智能排座';
       dom.smartActivateBtn.disabled = pro.isPro;
@@ -2093,62 +2093,100 @@
       }
 
       const rows = [
-        ['姓名'],
-        ['张一'],
-        ['李二'],
-        ['王三'],
-        ['赵四'],
-        ['孙五'],
-        ['周六'],
-        ['吴七'],
-        ['郑八'],
-        ['冯九'],
-        ['陈十'],
-        ['杨十一'],
-        ['朱十二'],
-        ['秦十三'],
-        ['何十四'],
-        ['吕十五'],
-        ['高十六'],
-        ['林十七'],
-        ['徐十八'],
-        ['马十九'],
-        ['胡二十'],
-        ['袁二一'],
-        ['宋二二'],
-        ['梁二三'],
-        ['杜二四'],
-        ['谢二五'],
-        ['潘二六'],
-        ['邓二七'],
-        ['曹二八'],
-        ['郭二九'],
-        ['魏三十'],
-        ['苏三五'],
-        ['董三二'],
-        ['韩二七'],
-        ['范三六'],
-        ['罗二二'],
-        ['唐二六']
+        ['姓名', '备注（选填）', '', '使用说明'],
+        ['张一', '示例，可删除后填写本班名单', '', '基础版填写说明\n1. 只需要填写 A 列“姓名”，每行一个学生。\n2. B 列备注不会参与排座，可写学号、小组或临时说明。\n3. 上传时请保留第 1 行表头“姓名”。\n4. 基础版支持名单导入、生成座位、拖拽调整和普通图片导出。\n5. 需要身高、视力、名次、同桌偏好等智能规则时，请激活专业版并下载专业模板。'],
+        ['李二', '', '', ''],
+        ['王三', '', '', ''],
+        ['赵四', '', '', ''],
+        ['孙五', '', '', ''],
+        ['周六', '', '', ''],
+        ['吴七', '', '', '填写区'],
+        ['郑八', '', '', '把示例姓名替换成本班学生；人数不限，座位数不够时页面会提示。'],
+        ['冯九', '', '', ''],
+        ['陈十', '', '', '导入后'],
+        ['杨十一', '', '', '页面会自动读取 A 列姓名，并去掉重复姓名。'],
+        ['朱十二', '', '', ''],
+        ['秦十三', '', '', '小提示'],
+        ['何十四', '', '', '如果学生姓名中有空格，建议先去掉空格后再导入。'],
+        ['吕十五', '', '', ''],
+        ['高十六', '', '', ''],
+        ['林十七', '', '', ''],
+        ['徐十八', '', '', ''],
+        ['马十九', '', '', ''],
+        ['胡二十', '', '', ''],
+        ['袁二一', '', '', ''],
+        ['宋二二', '', '', ''],
+        ['梁二三', '', '', ''],
+        ['杜二四', '', '', ''],
+        ['谢二五', '', '', ''],
+        ['潘二六', '', '', ''],
+        ['邓二七', '', '', ''],
+        ['曹二八', '', '', ''],
+        ['郭二九', '', '', ''],
+        ['魏三十', '', '', ''],
+        ['苏三一', '', '', ''],
+        ['董三二', '', '', ''],
+        ['韩三三', '', '', ''],
+        ['范三四', '', '', ''],
+        ['罗三五', '', '', ''],
+        ['唐三六', '', '', '']
       ];
       const sheet = XLSX.utils.aoa_to_sheet(rows);
-      sheet['!cols'] = [{ wch: 16 }];
-      sheet['!rows'] = rows.map((_, index) => ({ hpt: index === 0 ? 26 : 22 }));
-      sheet['A1'].s = {
-        fill: { fgColor: { rgb: '4F46E5' } },
-        font: { bold: true, color: { rgb: 'FFFFFF' } },
-        alignment: { horizontal: 'center', vertical: 'center' }
+      sheet['!cols'] = [
+        { wch: 16 },
+        { wch: 26 },
+        { wch: 4 },
+        { wch: 58 }
+      ];
+      sheet['!rows'] = rows.map((_, index) => ({ hpt: index === 1 ? 104 : index === 0 ? 28 : 22 }));
+      sheet['!merges'] = [
+        { s: { r: 1, c: 3 }, e: { r: 5, c: 3 } }
+      ];
+      sheet['!autofilter'] = { ref: 'A1:B37' };
+      const border = {
+        top: { style: 'thin', color: { rgb: 'E5E7EB' } },
+        bottom: { style: 'thin', color: { rgb: 'E5E7EB' } },
+        left: { style: 'thin', color: { rgb: 'E5E7EB' } },
+        right: { style: 'thin', color: { rgb: 'E5E7EB' } }
       };
+      ['A1', 'B1', 'D1'].forEach(address => {
+        sheet[address].s = {
+          fill: { fgColor: { rgb: '4F46E5' } },
+          font: { bold: true, color: { rgb: 'FFFFFF' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border
+        };
+      });
       for (let rowIndex = 2; rowIndex <= rows.length; rowIndex++) {
         const cell = sheet[`A${rowIndex}`];
         if (cell) {
           cell.s = {
-            alignment: { horizontal: 'center', vertical: 'center' }
+            fill: { fgColor: { rgb: rowIndex <= 6 ? 'EEF2FF' : 'FFFFFF' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border
+          };
+        }
+        const noteCell = sheet[`B${rowIndex}`];
+        if (noteCell) {
+          noteCell.s = {
+            fill: { fgColor: { rgb: rowIndex <= 6 ? 'F9FAFB' : 'FFFFFF' } },
+            font: { color: { rgb: rowIndex === 2 ? '6B7280' : '9CA3AF' } },
+            alignment: { vertical: 'center' },
+            border
+          };
+        }
+        const helpCell = sheet[`D${rowIndex}`];
+        if (helpCell) {
+          helpCell.s = {
+            fill: { fgColor: { rgb: rowIndex === 2 ? 'EEF2FF' : 'F9FAFB' } },
+            font: { color: { rgb: rowIndex === 8 || rowIndex === 11 || rowIndex === 14 ? '111827' : '4B5563' }, bold: rowIndex === 2 || rowIndex === 8 || rowIndex === 11 || rowIndex === 14 },
+            alignment: { vertical: 'center', wrapText: true },
+            border
           };
         }
       }
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, sheet, '基础版测试名单');
+      XLSX.utils.book_append_sheet(workbook, sheet, '基础版名单模板');
       XLSX.writeFile(workbook, '班主任智能排座名单导入模板.xlsx');
     }
 
