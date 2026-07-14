@@ -402,7 +402,7 @@
     </section>
   </main>
 
-  <div id="floatingHelp" class="fixed right-0 top-1/2 z-40 -translate-y-1/2">
+  <div id="floatingHelp" class="fixed right-0 top-1/2 z-40 flex -translate-y-1/2 flex-col items-end gap-3">
     <div class="group relative flex items-center justify-end">
       <div class="brand-gradient rounded-l-xl px-3 py-5 text-xs font-bold leading-4 text-white shadow-2xl ring-1 ring-white/30 [writing-mode:vertical-rl]">使用帮助</div>
       <div class="pointer-events-none absolute right-full top-1/2 mr-3 w-[400px] -translate-y-1/2 opacity-0 transition duration-200 ease-out group-hover:pointer-events-auto group-hover:opacity-100">
@@ -450,6 +450,37 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+    <!-- 反馈入口：右侧竖排标签 -->
+    <div class="group relative flex items-center justify-end">
+      <button id="feedbackTab" type="button" class="brand-gradient rounded-l-xl px-3 py-5 text-xs font-bold leading-4 text-white shadow-2xl ring-1 ring-white/30 [writing-mode:vertical-rl] transition hover:brightness-110">意见反馈</button>
+    </div>
+  </div>
+
+  <!-- 反馈弹窗 -->
+  <div id="feedbackModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4">
+    <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div class="brand-gradient flex items-center justify-between px-5 py-3.5 text-white">
+        <p class="text-base font-bold">💬 意见反馈</p>
+        <button id="feedbackClose" type="button" class="text-xl leading-none text-white/80 transition hover:text-white">✕</button>
+      </div>
+      <div class="space-y-3 p-5">
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-ink">问题描述 <span class="text-red-500">*</span></label>
+          <textarea id="feedbackDesc" rows="4" class="w-full resize-none rounded-lg border border-gray-200 p-2.5 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" placeholder="哪里不好用？出现了什么 bug？越具体越好～"></textarea>
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-ink">截图（可选）</label>
+          <div id="feedbackScreenshotBox" class="flex h-20 cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-300 px-3 text-center text-xs text-soft transition hover:border-brand">点击选择图片，或 Ctrl/Cmd+V 粘贴</div>
+          <input id="feedbackScreenshotInput" type="file" accept="image/*" class="hidden" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-ink">留个微信（可选）</label>
+          <input id="feedbackWechat" type="text" class="w-full rounded-lg border border-gray-200 p-2.5 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" placeholder="方便我们回复你" />
+        </div>
+        <p class="text-[11px] leading-relaxed text-muted">提交后我们会通过微信及时收到，并尽快联系你。也可直接加客服微信 ayjb13140。</p>
+        <button id="feedbackSubmit" type="button" class="w-full rounded-lg bg-brand py-2.5 text-sm font-bold text-white transition hover:brightness-110">提交反馈</button>
       </div>
     </div>
   </div>
@@ -695,6 +726,7 @@
     const MAX_BOUND_DEVICES = 2;
     // 售后联系方式配置接口：建议由 Edge Function 返回 { wechat_id, qr_image_url }，方便后台更新。
     const CONTACT_CONFIG_FUNCTION_URL = 'https://awzjrlvqwlprrqrfybfi.supabase.co/functions/v1/contact-config';
+    const FEEDBACK_FUNCTION_URL = 'https://awzjrlvqwlprrqrfybfi.supabase.co/functions/v1/feedback';
     const CONTACT_WECHAT_ID = 'ayjb13140';
     const CONTACT_QR_IMAGE_URL = '';
 
@@ -2093,6 +2125,94 @@
       showToast.timer = setTimeout(() => dom.toast.classList.add('hidden'), 2400);
     }
 
+    function initFeedback() {
+      const tab = document.getElementById('feedbackTab');
+      const modal = document.getElementById('feedbackModal');
+      const closeBtn = document.getElementById('feedbackClose');
+      const submitBtn = document.getElementById('feedbackSubmit');
+      const descEl = document.getElementById('feedbackDesc');
+      const wechatEl = document.getElementById('feedbackWechat');
+      const box = document.getElementById('feedbackScreenshotBox');
+      const fileInput = document.getElementById('feedbackScreenshotInput');
+      let screenshotDataUrl = '';
+
+      if (!tab || !modal) return;
+
+      const openModal = () => { modal.classList.remove('hidden'); modal.classList.add('flex'); };
+      const closeModal = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+
+      tab.addEventListener('click', openModal);
+      closeBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+      const handleImageFile = (file) => {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          screenshotDataUrl = String(reader.result);
+          box.textContent = '已选截图 ✓（点击重新选择）';
+          box.classList.add('border-brand');
+        };
+        reader.readAsDataURL(file);
+      };
+
+      box.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', () => {
+        const f = fileInput.files && fileInput.files[0];
+        if (f) handleImageFile(f);
+      });
+      document.addEventListener('paste', (e) => {
+        if (modal.classList.contains('hidden')) return;
+        const items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+        for (const it of items) {
+          if (it.type.indexOf('image') === 0) { e.preventDefault(); handleImageFile(it.getAsFile()); break; }
+        }
+      });
+
+      submitBtn.addEventListener('click', async () => {
+        const description = descEl.value.trim();
+        if (!description) { showToast('请先填写问题描述'); descEl.focus(); return; }
+        submitBtn.disabled = true;
+        submitBtn.textContent = '提交中…';
+        try {
+          const payload = {
+            description,
+            wechat: wechatEl.value.trim(),
+            screenshot: screenshotDataUrl || undefined,
+            url: location.href,
+            userAgent: navigator.userAgent,
+            pageEnv: JSON.stringify({ ts: new Date().toISOString(), url: location.href }),
+          };
+          const resp = await fetch(FEEDBACK_FUNCTION_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify(payload),
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (data && data.success) {
+            showToast(data.message || '已收到反馈，感谢你的反馈！');
+            closeModal();
+            descEl.value = ''; wechatEl.value = ''; screenshotDataUrl = '';
+            box.textContent = '点击选择图片，或 Ctrl/Cmd+V 粘贴';
+            box.classList.remove('border-brand');
+            fileInput.value = '';
+          } else {
+            showToast((data && data.message) || '提交失败，请稍后重试');
+          }
+        } catch (err) {
+          showToast('网络异常，请稍后重试或直接加微信 ayjb13140');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '提交反馈';
+        }
+      });
+    }
+
     function downloadTemplate() {
       const rows = [
         ['姓名', '性别', '身高(cm)', '视力', '名次', '是否近视', '是否爱讲话', '希望同桌', '不想同桌', '', '使用说明'],
@@ -2655,6 +2775,7 @@
     updateContactInfo();
     loadContactConfig();
     render();
+    initFeedback();
   </script>
 </body>
 </html>
