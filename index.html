@@ -405,22 +405,48 @@
   <div id="floatingHelp" class="fixed right-0 top-1/2 z-40 -translate-y-1/2">
     <div class="group relative flex items-center justify-end">
       <div class="brand-gradient rounded-l-xl px-3 py-5 text-xs font-bold leading-4 text-white shadow-2xl ring-1 ring-white/30 [writing-mode:vertical-rl]">使用帮助</div>
-      <div class="pointer-events-none absolute right-full top-1/2 mr-3 w-[560px] -translate-y-1/2 opacity-0 transition duration-200 ease-out group-hover:pointer-events-auto group-hover:opacity-100">
-        <div class="overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-2xl ring-4 ring-indigo-100/70">
-          <div class="brand-gradient px-5 py-4 text-white">
-            <p class="text-base font-bold leading-6">联系客服</p>
-            <p class="mt-1 text-xs font-medium leading-4 text-white/80">激活码、设备绑定、模板导入或排座异常，都可以扫码处理。</p>
+      <div class="pointer-events-none absolute right-full top-1/2 mr-3 w-[400px] -translate-y-1/2 opacity-0 transition duration-200 ease-out group-hover:pointer-events-auto group-hover:opacity-100">
+        <div class="overflow-hidden rounded-2xl border border-indigo-100 bg-white shadow-2xl ring-4 ring-indigo-100/70">
+          <!-- 标题 -->
+          <div class="brand-gradient px-6 py-4 text-white">
+            <p class="text-lg font-bold leading-6">📖 使用帮助</p>
+            <p class="mt-1 text-xs font-medium leading-5 text-white/85">基础排座免费 · 专业智能排座需激活</p>
           </div>
-          <div class="grid grid-cols-[220px_minmax(0,1fr)] gap-5 p-5">
-            <div id="floatingContactQrBox" class="flex h-[220px] w-[220px] shrink-0 items-center justify-center rounded-xl border border-dashed border-indigo-200 bg-page text-xs font-medium leading-4 text-soft">微信二维码</div>
-            <div class="min-w-0">
-              <p class="text-sm font-bold leading-5 text-ink">添加后请备注：排座工具</p>
-              <div class="mt-2 grid gap-2 text-xs font-medium leading-5 text-muted">
-                <p class="rounded-lg bg-page px-3 py-2">1. 购买或激活兑换码</p>
-                <p class="rounded-lg bg-page px-3 py-2">2. 处理设备绑定名额</p>
-                <p class="rounded-lg bg-page px-3 py-2">3. 协助检查模板和排座结果</p>
+
+          <!-- 基础使用 -->
+          <div class="px-6 py-4">
+            <p class="mb-3 flex items-center gap-2 text-xs font-bold text-brand">
+              <span class="rounded bg-indigo-50 px-2 py-0.5">基础版</span>免费手动排座
+            </p>
+            <div class="space-y-3">
+              <div class="flex items-start gap-3">
+                <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">1</span>
+                <div><p class="text-sm font-semibold text-ink">输入学生名单</p><p class="mt-1 text-[13px] leading-relaxed text-muted">在左侧框里粘贴姓名（每行一个），或上传 Excel 名单。</p></div>
               </div>
-              <p id="floatingContactWechatText" class="mt-3 rounded-lg bg-indigo-50 px-3 py-2 text-sm font-semibold leading-5 text-brand">微信号：请在代码中填写</p>
+              <div class="flex items-start gap-3">
+                <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">2</span>
+                <div><p class="text-sm font-semibold text-ink">生成座位表</p><p class="mt-1 text-[13px] leading-relaxed text-muted">设置好行数、列数和桌型，点击「生成座位」即可。</p></div>
+              </div>
+              <div class="flex items-start gap-3">
+                <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">3</span>
+                <div><p class="text-sm font-semibold text-ink">调整并导出</p><p class="mt-1 text-[13px] leading-relaxed text-muted">拖动学生卡片微调位置，最后导出图片或 Excel。</p></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 专业版 & 客服 -->
+          <div class="border-t border-indigo-100 bg-gradient-to-b from-indigo-50/70 to-purple-50/50 px-6 py-4">
+            <p class="mb-2 flex items-center gap-2 text-xs font-bold text-brand">
+              <span class="rounded bg-brand px-2 py-0.5 text-white">专业版</span>智能排座
+            </p>
+            <p class="mb-3 text-[13px] leading-relaxed text-ink">支持按身高、视力、成绩智能排序，男女同桌搭配、冲突自动规避等。需要<strong class="text-brand">先购买兑换码激活</strong>。</p>
+            <div class="flex items-center gap-3 rounded-xl bg-white p-3 ring-1 ring-indigo-100">
+              <div id="floatingContactQrBox" class="flex h-[96px] w-[96px] shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-indigo-200 bg-white text-[9px] font-medium text-soft">微信二维码</div>
+              <div class="min-w-0">
+                <p class="text-[13px] font-semibold text-ink">遇到问题？扫码联系客服</p>
+                <p id="floatingContactWechatText" class="mt-1 text-[13px] font-bold text-brand">微信：ayjb13140</p>
+                <p class="mt-0.5 text-[11px] leading-relaxed text-muted">购买兑换码 / 激活异常 / 设备解绑</p>
+              </div>
             </div>
           </div>
         </div>
@@ -869,7 +895,7 @@
 
       const qrBoxes = [dom.contactQrBox, dom.floatingContactQrBox].filter(Boolean);
       if (contactConfig.qrImageUrl) {
-        const qrImage = `<img src="${escapeHTML(contactConfig.qrImageUrl)}" alt="微信二维码" class="h-full w-full rounded-xl object-cover" />`;
+        const qrImage = `<img src="${escapeHTML(contactConfig.qrImageUrl)}" alt="微信二维码" class="h-full w-full rounded-lg object-contain" />`;
         qrBoxes.forEach(box => {
           box.innerHTML = qrImage;
           box.classList.remove('border-dashed');
@@ -1923,7 +1949,20 @@
     function fillEmptySeats(message = '座位已按名单填入') {
       const seated = new Set(appState.seats.filter(Boolean));
       const waiting = appState.students.filter(name => !seated.has(name));
-      appState.seats = appState.seats.map(name => name || waiting.shift() || '');
+      // 按从前到后的顺序填座：视觉第1排(讲台旁)优先，避免全挤在最后一排
+      const next = [...appState.seats];
+      const frontToBack = getFrontToBackSeatIndices();
+      let wi = 0;
+      for (const i of frontToBack) {
+        if (!next[i] && wi < waiting.length) next[i] = waiting[wi++];
+      }
+      // 剩余学生（超出座位数的）按原数组顺序追加到剩余空位
+      if (wi < waiting.length) {
+        for (let i = 0; i < next.length && wi < waiting.length; i++) {
+          if (!next[i]) next[i] = waiting[wi++];
+        }
+      }
+      appState.seats = next;
       render();
       showToast(message);
     }
