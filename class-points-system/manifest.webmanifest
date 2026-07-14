@@ -1,0 +1,14 @@
+{
+  "name": "星芽班级成长中心",
+  "short_name": "星芽成长",
+  "description": "教师、家长和学生共同使用的积分与成长管理系统",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f6fa",
+  "theme_color": "#6255e7",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
